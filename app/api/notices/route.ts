@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    const { data, error } = await supabase.from("notices").select("*").order("created_at", { ascending: false })
+    const { data, error } = await supabase.schema("all_use_programs").from("top_botton_program").select("*").order("created_at", { ascending: false })
 
     if (error) throw error
 
@@ -28,7 +28,8 @@ export async function POST(request: Request) {
     const supabase = await createClient()
 
     const { data, error } = await supabase
-      .from("notices")
+      .schema("all_use_programs")
+      .from("top_botton_program")
       .insert({
         title,
         content,

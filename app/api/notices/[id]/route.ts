@@ -11,7 +11,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     const supabase = await createClient()
 
-    const { data, error } = await supabase.from("notices").select("*").eq("id", id).single()
+    const { data, error } = await supabase.schema("all_use_programs").from("top_botton_program").select("*").eq("id", id).single()
 
     if (error) throw error
 
@@ -39,7 +39,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const supabase = await createClient()
 
     const { data, error } = await supabase
-      .from("notices")
+      .schema("all_use_programs")
+      .from("top_botton_program")
       .update({
         title,
         content,
@@ -75,7 +76,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     const supabase = await createClient()
 
-    const { error } = await supabase.from("notices").delete().eq("id", id)
+    const { error } = await supabase.schema("all_use_programs").from("top_botton_program").delete().eq("id", id)
 
     if (error) throw error
 

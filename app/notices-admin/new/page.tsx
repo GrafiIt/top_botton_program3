@@ -11,8 +11,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { X, ArrowLeft, Save } from "lucide-react"
 
-const PAGE_VERSION = "v2024-01-19-ADMIN"
-
 export default function NewNoticePage() {
   const router = useRouter()
   const [title, setTitle] = useState("")
@@ -23,13 +21,20 @@ export default function NewNoticePage() {
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    console.log("[v0] New Notice Page Version:", PAGE_VERSION)
-    console.log("[v0] Page loaded at:", new Date().toISOString())
     const isLoggedIn = sessionStorage.getItem("admin_logged_in")
     if (!isLoggedIn) {
       router.push("/notices-admin/login")
     }
   }, [router])
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -38,26 +43,10 @@ export default function NewNoticePage() {
     setIsUploading(true)
     try {
       for (let i = 0; i < files.length; i++) {
-        const formData = new FormData()
-        formData.append("file", files[i])
-        formData.append("adminPassword", "ener1004@")
-
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          alert(`${files[i].name} 업로드 실패: ${error.error || "알 수 없는 오류"}`)
-          continue
-        }
-
-        const data = await response.json()
-        setImages((prev) => [...prev, data.url])
+        const dataUrl = await fileToBase64(files[i])
+        setImages((prev) => [...prev, dataUrl])
       }
     } catch (error) {
-      console.error("[v0] Error uploading image:", error)
       alert("이미지 업로드 중 오류가 발생했습니다.")
     } finally {
       setIsUploading(false)
@@ -71,26 +60,10 @@ export default function NewNoticePage() {
     setIsUploading(true)
     try {
       for (let i = 0; i < files.length; i++) {
-        const formData = new FormData()
-        formData.append("file", files[i])
-        formData.append("adminPassword", "ener1004@")
-
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          alert(`${files[i].name} 업로드 실패: ${error.error || "알 수 없는 오류"}`)
-          continue
-        }
-
-        const data = await response.json()
-        setAttachments((prev) => [...prev, { name: files[i].name, url: data.url, path: data.path }])
+        const dataUrl = await fileToBase64(files[i])
+        setAttachments((prev) => [...prev, { name: files[i].name, url: dataUrl, path: files[i].name }])
       }
     } catch (error) {
-      console.error("[v0] Error uploading file:", error)
       alert("파일 업로드 중 오류가 발생했습니다.")
     } finally {
       setIsUploading(false)
@@ -110,29 +83,22 @@ export default function NewNoticePage() {
 
     setIsSaving(true)
     try {
-      const response = await fetch("/api/notices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          content,
-          images,
-          attachments,
-          adminPassword: "ener1004@",
-        }),
-      })
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
+      const { error } = await supabase
+        .schema("all_use_programs")
+        .from("top_botton_program")
+        .insert({ title, content, images: images || [], attachments: attachments || [] })
 
-      if (!response.ok) {
-        const error = await response.json()
-        alert(error.error || "저장 실패")
+      if (error) {
+        alert("저장 실패: " + error.message)
         return
       }
 
       alert("공지사항이 등록되었습니다.")
-      router.push("/notices")
-    } catch (error) {
-      console.error("[v0] Error creating notice:", error)
-      alert("공지사항 등록 중 오류가 발생했습니다.")
+      router.push("/")
+    } catch (error: any) {
+      alert("공지사항 등록 중 오류가 발생했습니다: " + error?.message)
     } finally {
       setIsSaving(false)
     }
@@ -147,8 +113,6 @@ export default function NewNoticePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="text-xs text-muted-foreground mb-2 text-right">Version: {PAGE_VERSION}</div>
-
         <div className="mb-8">
           <Button variant="ghost" onClick={() => router.back()} className="gap-2">
             <ArrowLeft className="w-4 h-4" />

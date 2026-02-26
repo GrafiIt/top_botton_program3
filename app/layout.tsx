@@ -3,7 +3,6 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { JetBrains_Mono } from "next/font/google"
 import "./globals.css"
-import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Analytics } from "@vercel/analytics/next"
 import { RemoveBadge } from "@/components/remove-badge"
@@ -37,7 +36,6 @@ export default function RootLayout({
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <LanguageProvider>
           <div className="relative flex min-h-screen flex-col">
-            <SiteHeader />
             <main className="flex-1">{children}</main>
             <SiteFooter />
           </div>

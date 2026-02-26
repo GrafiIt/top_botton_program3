@@ -124,7 +124,8 @@ export default function NewNoticePage() {
 
       if (!response.ok) {
         const error = await response.json()
-        alert(error.error || "저장 실패")
+        console.log("[v0] Save error response:", JSON.stringify(error))
+        alert("저장 실패: " + (error.error || "알 수 없는 오류"))
         return
       }
 

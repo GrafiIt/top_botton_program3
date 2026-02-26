@@ -39,11 +39,12 @@ export async function POST(request: Request) {
       .select()
       .single()
 
-    console.log("[v0] POST result - data:", data, "error:", error)
+    console.log("[v0] POST result - data:", data, "error:", JSON.stringify(error))
     if (error) throw error
 
     return NextResponse.json(data)
-  } catch {
-    return NextResponse.json({ error: "Failed to create notice" }, { status: 500 })
+  } catch (err: any) {
+    console.log("[v0] POST catch error:", JSON.stringify(err))
+    return NextResponse.json({ error: err?.message || err?.toString() || "Failed to create notice" }, { status: 500 })
   }
 }

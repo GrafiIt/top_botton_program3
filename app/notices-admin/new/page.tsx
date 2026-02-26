@@ -23,8 +23,6 @@ export default function NewNoticePage() {
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    console.log("[v0] New Notice Page Version:", PAGE_VERSION)
-    console.log("[v0] Page loaded at:", new Date().toISOString())
     const isLoggedIn = sessionStorage.getItem("admin_logged_in")
     if (!isLoggedIn) {
       router.push("/notices-admin/login")
@@ -110,30 +108,22 @@ export default function NewNoticePage() {
 
     setIsSaving(true)
     try {
-      const response = await fetch("/api/notices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          content,
-          images,
-          attachments,
-          adminPassword: "ener1004@",
-        }),
-      })
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
+      const { error } = await supabase
+        .schema("all_use_programs")
+        .from("top_botton_program")
+        .insert({ title, content, images: images || [], attachments: attachments || [] })
 
-      if (!response.ok) {
-        const error = await response.json()
-        console.log("[v0] Save error response:", JSON.stringify(error))
-        alert("저장 실패: " + (error.error || "알 수 없는 오류"))
+      if (error) {
+        alert("저장 실패: " + error.message)
         return
       }
 
       alert("공지사항이 등록되었습니다.")
-      router.push("/notices")
-    } catch (error) {
-      console.error("[v0] Error creating notice:", error)
-      alert("공지사항 등록 중 오류가 발생했습니다.")
+      router.push("/")
+    } catch (error: any) {
+      alert("공지사항 등록 중 오류가 발생했습니다: " + error?.message)
     } finally {
       setIsSaving(false)
     }

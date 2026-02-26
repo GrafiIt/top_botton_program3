@@ -18,22 +18,27 @@ export function NoticeAdminPanel({ noticeId }: { noticeId: string }) {
       return
     }
 
-    try {
-      const response = await fetch(`/api/notices/${noticeId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminPassword: password }),
-      })
+    if (password !== "ener1004@") {
+      alert("비밀번호가 올바르지 않습니다.")
+      return
+    }
 
-      if (!response.ok) {
-        const error = await response.json()
-        alert(error.error || "삭제 실패")
+    try {
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
+      const { error } = await supabase
+        .schema("all_use_programs")
+        .from("top_botton_program")
+        .delete()
+        .eq("id", noticeId)
+
+      if (error) {
+        alert("삭제 실패: " + error.message)
         return
       }
 
       alert("공지사항이 삭제되었습니다.")
-      router.push("/notices")
-      router.refresh()
+      router.push("/")
     } catch {
       alert("삭제 중 오류가 발생했습니다.")
     }

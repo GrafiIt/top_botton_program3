@@ -81,21 +81,14 @@ export default function NewNoticePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    console.log("[v0] handleSubmit called, typeof window:", typeof window)
-    console.log("[v0] SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
-
     setIsSaving(true)
     try {
       const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
-      console.log("[v0] supabase client created, about to insert")
-      const { data, error } = await supabase
+      const { error } = await supabase
         .schema("all_use_programs")
         .from("top_botton_program")
         .insert({ title, content, images: images || [], attachments: attachments || [] })
-        .select()
-
-      console.log("[v0] insert result - data:", data, "error:", JSON.stringify(error))
 
       if (error) {
         alert("저장 실패: " + error.message)
@@ -105,7 +98,6 @@ export default function NewNoticePage() {
       alert("공지사항이 등록되었습니다.")
       router.push("/")
     } catch (error: any) {
-      console.log("[v0] catch error:", error?.message, error?.stack)
       alert("공지사항 등록 중 오류가 발생했습니다: " + error?.message)
     } finally {
       setIsSaving(false)

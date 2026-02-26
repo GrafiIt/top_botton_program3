@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       .select()
       .single()
 
+    console.log("[v0] POST result - data:", data, "error:", error)
     if (error) throw error
 
     return NextResponse.json(data)

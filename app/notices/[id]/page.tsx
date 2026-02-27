@@ -30,6 +30,7 @@ export default function NoticeDetailPage() {
     const fetchNotice = async () => {
       const supabase = createClient()
       const { data, error } = await supabase
+        .schema("all_use_programs")
         .from("top_botton_program")
         .select("*")
         .eq("id", id)

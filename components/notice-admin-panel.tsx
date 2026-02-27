@@ -27,6 +27,7 @@ export function NoticeAdminPanel({ noticeId }: { noticeId: string }) {
       const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
       const { error } = await supabase
+        .schema("all_use_programs")
         .from("top_botton_program")
         .delete()
         .eq("id", noticeId)

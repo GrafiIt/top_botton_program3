@@ -86,7 +86,6 @@ export default function NewNoticePage() {
       const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
       const { error } = await supabase
-        .schema("all_use_programs")
         .from("top_botton_program")
         .insert({ title, content, images: images || [], attachments: attachments || [] })
 

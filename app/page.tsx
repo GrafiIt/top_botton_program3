@@ -31,7 +31,6 @@ export default function HomePage() {
       const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
       const { data, error } = await supabase
-        .schema("all_use_programs")
         .from("top_botton_program")
         .select("*")
         .order("created_at", { ascending: false })

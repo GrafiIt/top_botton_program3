@@ -19,6 +19,26 @@ interface Notice {
   video_url?: string | null
 }
 
+function getEmbedUrl(url: string): string | null {
+  if (!url) return null
+
+  // YouTube: watch?v=ID, youtu.be/ID, youtube.com/shorts/ID, youtube.com/embed/ID
+  const ytMatch =
+    url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/) ||
+    url.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{11})/)
+  if (ytMatch) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}`
+  }
+
+  // Vimeo: vimeo.com/ID
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/)
+  if (vimeoMatch) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`
+  }
+
+  return null
+}
+
 export default function NoticeDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -73,6 +93,8 @@ export default function NoticeDetailPage() {
 
   if (!notice) return null
 
+  const embedUrl = notice.video_url ? getEmbedUrl(notice.video_url) : null
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
@@ -104,16 +126,15 @@ export default function NoticeDetailPage() {
               </div>
             )}
 
-            {notice.video_url && (
-              <div className="rounded-lg overflow-hidden border">
-                <video
-                  src={notice.video_url}
-                  controls
-                  preload="metadata"
-                  className="w-full"
-                >
-                  이 브라우저는 동영상을 지원하지 않습니다.
-                </video>
+            {notice.video_url && embedUrl && (
+              <div className="rounded-lg overflow-hidden border aspect-video">
+                <iframe
+                  src={embedUrl}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="동영상"
+                />
               </div>
             )}
 

@@ -11,6 +11,26 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { X, ArrowLeft, Save } from "lucide-react"
 
+function getEmbedUrl(url: string): string | null {
+  if (!url) return null
+
+  // YouTube: watch?v=ID, youtu.be/ID, youtube.com/shorts/ID, youtube.com/embed/ID
+  const ytMatch =
+    url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/) ||
+    url.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{11})/)
+  if (ytMatch) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}`
+  }
+
+  // Vimeo: vimeo.com/ID
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/)
+  if (vimeoMatch) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`
+  }
+
+  return null
+}
+
 export default function NewNoticePage() {
   const router = useRouter()
   const [title, setTitle] = useState("")
@@ -111,6 +131,8 @@ export default function NewNoticePage() {
     router.push("/notices")
   }
 
+  const embedUrl = getEmbedUrl(videoUrl)
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
@@ -153,7 +175,9 @@ export default function NewNoticePage() {
 
               <div>
                 <Label htmlFor="videoUrl">동영상 URL</Label>
-                <p className="text-sm text-muted-foreground mb-2">외부 동영상 URL을 입력하면 본문 상단에 표시됩니다 (YouTube, Vimeo 등)</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  외부 동영상 URL을 입력하면 본문 상단에 표시됩니다 (YouTube, Vimeo 등)
+                </p>
                 <Input
                   id="videoUrl"
                   value={videoUrl}
@@ -161,15 +185,20 @@ export default function NewNoticePage() {
                   placeholder="https://www.youtube.com/watch?v=..."
                 />
                 {videoUrl && (
-                  <div className="mt-3 rounded-lg overflow-hidden border">
-                    <video
-                      src={videoUrl}
-                      controls
-                      className="w-full"
-                      preload="metadata"
-                    >
-                      이 브라우저는 동영상을 지원하지 않습니다.
-                    </video>
+                  <div className="mt-3 rounded-lg overflow-hidden border aspect-video">
+                    {embedUrl ? (
+                      <iframe
+                        src={embedUrl}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title="동영상 미리보기"
+                      />
+                    ) : (
+                      <p className="flex items-center justify-center h-full text-sm text-muted-foreground p-4">
+                        지원하지 않는 URL 형식입니다. YouTube 또는 Vimeo 링크를 입력해주세요.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, ChevronRight } from "lucide-react"
+import { ArrowLeft, ChevronRight, ChevronLeft } from "lucide-react"
+
+const PAGE_SIZE = 20
+const PAGE_WINDOW = 4
 
 interface Notice {
   id: string
@@ -14,6 +17,7 @@ interface Notice {
 export default function NoticesListPage() {
   const [notices, setNotices] = useState<Notice[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     const fetchNotices = async () => {
@@ -40,6 +44,14 @@ export default function NoticesListPage() {
     }
     fetchNotices()
   }, [])
+
+  const totalPages = Math.ceil(notices.length / PAGE_SIZE)
+  const pagedNotices = notices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  // 4개 페이지 번호 윈도우 계산
+  const windowStart = Math.max(1, Math.min(currentPage - Math.floor(PAGE_WINDOW / 2), totalPages - PAGE_WINDOW + 1))
+  const windowEnd = Math.min(totalPages, windowStart + PAGE_WINDOW - 1)
+  const pageNumbers = Array.from({ length: windowEnd - windowStart + 1 }, (_, i) => windowStart + i)
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "날짜 정보 없음"
@@ -81,7 +93,7 @@ export default function NoticesListPage() {
           </div>
         ) : (
           <ul className="divide-y divide-border border rounded-lg overflow-hidden">
-            {notices.map((notice, index) => (
+            {pagedNotices.map((notice, index) => (
               <li key={notice.id}>
                 <Link
                   href={`/notices/${notice.id}`}
@@ -89,7 +101,7 @@ export default function NoticesListPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-sm text-muted-foreground w-6 shrink-0 text-right">
-                      {index + 1}
+                      {(currentPage - 1) * PAGE_SIZE + index + 1}
                     </span>
                     <span className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
                       {notice.title}
@@ -107,8 +119,48 @@ export default function NoticesListPage() {
           </ul>
         )}
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          총 {notices.length}개의 상하차지
+        {/* 페이지네이션 */}
+        {!isLoading && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1 mt-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              aria-label="이전 페이지"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              이전
+            </Button>
+
+            {pageNumbers.map((page) => (
+              <Button
+                key={page}
+                variant={page === currentPage ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                aria-current={page === currentPage ? "page" : undefined}
+                className="min-w-[36px]"
+              >
+                {page}
+              </Button>
+            ))}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              aria-label="다음 페이지"
+            >
+              다음
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+
+        <p className="text-center text-sm text-muted-foreground mt-4">
+          총 {notices.length}개의 상하차지 ({currentPage} / {totalPages || 1} 페이지)
         </p>
       </div>
     </div>

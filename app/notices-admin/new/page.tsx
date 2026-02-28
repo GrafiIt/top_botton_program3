@@ -17,6 +17,7 @@ export default function NewNoticePage() {
   const [content, setContent] = useState("")
   const [images, setImages] = useState<string[]>([])
   const [attachments, setAttachments] = useState<any[]>([])
+  const [videoUrl, setVideoUrl] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -86,8 +87,9 @@ export default function NewNoticePage() {
       const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
       const { error } = await supabase
+        .schema("all_use_programs")
         .from("top_botton_program")
-        .insert({ title, content, images: images || [], attachments: attachments || [] })
+        .insert({ title, content, images: images || [], attachments: attachments || [], video_url: videoUrl || null })
 
       if (error) {
         alert("저장 실패: " + error.message)
@@ -147,6 +149,29 @@ export default function NewNoticePage() {
                   required
                   className="min-h-[600px]"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="videoUrl">동영상 URL</Label>
+                <p className="text-sm text-muted-foreground mb-2">외부 동영상 URL을 입력하면 본문 상단에 표시됩니다 (YouTube, Vimeo 등)</p>
+                <Input
+                  id="videoUrl"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                {videoUrl && (
+                  <div className="mt-3 rounded-lg overflow-hidden border">
+                    <video
+                      src={videoUrl}
+                      controls
+                      className="w-full"
+                      preload="metadata"
+                    >
+                      이 브라우저는 동영상을 지원하지 않습니다.
+                    </video>
+                  </div>
+                )}
               </div>
 
               <div>

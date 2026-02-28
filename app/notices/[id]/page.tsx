@@ -16,6 +16,7 @@ interface Notice {
   created_at: string
   images?: string[]
   attachments?: any[]
+  video_url?: string | null
 }
 
 export default function NoticeDetailPage() {
@@ -30,6 +31,7 @@ export default function NoticeDetailPage() {
     const fetchNotice = async () => {
       const supabase = createClient()
       const { data, error } = await supabase
+        .schema("all_use_programs")
         .from("top_botton_program")
         .select("*")
         .eq("id", id)
@@ -99,6 +101,19 @@ export default function NoticeDetailPage() {
                 {notice.images.map((img, index) => (
                   <img key={index} src={img} alt={`Image ${index + 1}`} className="w-full rounded-lg" />
                 ))}
+              </div>
+            )}
+
+            {notice.video_url && (
+              <div className="rounded-lg overflow-hidden border">
+                <video
+                  src={notice.video_url}
+                  controls
+                  preload="metadata"
+                  className="w-full"
+                >
+                  이 브라우저는 동영상을 지원하지 않습니다.
+                </video>
               </div>
             )}
 

@@ -17,6 +17,7 @@ interface Notice {
   content: string
   images?: string[]
   attachments?: any[]
+  video_url?: string | null
 }
 
 export default function EditNoticePage() {
@@ -28,6 +29,7 @@ export default function EditNoticePage() {
   const [content, setContent] = useState("")
   const [images, setImages] = useState<string[]>([])
   const [attachments, setAttachments] = useState<any[]>([])
+  const [videoUrl, setVideoUrl] = useState("")
   const [password, setPassword] = useState(searchParams.get("password") || "")
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
@@ -41,13 +43,24 @@ export default function EditNoticePage() {
 
   const fetchNotice = async () => {
     try {
-      const response = await fetch(`/api/notices/${params.id}`)
-      const data = await response.json()
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .schema("all_use_programs")
+        .from("top_botton_program")
+        .select("*")
+        .eq("id", params.id)
+        .single()
+      if (error || !data) {
+        alert("공지사항을 불러오지 못했습니다.")
+        return
+      }
       setNotice(data)
       setTitle(data.title)
       setContent(data.content)
       setImages(data.images || [])
       setAttachments(data.attachments || [])
+      setVideoUrl(data.video_url || "")
     } catch {
       // silently handle fetch error
     } finally {
@@ -135,21 +148,16 @@ export default function EditNoticePage() {
 
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/notices/${params.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          content,
-          images,
-          attachments,
-          adminPassword: password,
-        }),
-      })
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
+      const { error } = await supabase
+        .schema("all_use_programs")
+        .from("top_botton_program")
+        .update({ title, content, images, attachments, video_url: videoUrl || null })
+        .eq("id", params.id)
 
-      if (!response.ok) {
-        const error = await response.json()
-        alert(error.error || "수정 실패")
+      if (error) {
+        alert("수정 실패: " + error.message)
         return
       }
 
@@ -217,6 +225,29 @@ export default function EditNoticePage() {
                   rows={10}
                   required
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="videoUrl">동영상 URL</Label>
+                <p className="text-sm text-muted-foreground mb-2">외부 동영상 URL을 입력하면 본문 상단에 표시됩니다 (YouTube, Vimeo 등)</p>
+                <Input
+                  id="videoUrl"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                {videoUrl && (
+                  <div className="mt-3 rounded-lg overflow-hidden border">
+                    <video
+                      src={videoUrl}
+                      controls
+                      preload="metadata"
+                      className="w-full"
+                    >
+                      이 브라우저는 동영상을 지원하지 않습니다.
+                    </video>
+                  </div>
+                )}
               </div>
 
               <div>

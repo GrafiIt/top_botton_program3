@@ -24,9 +24,11 @@ export default function NoticesListPage() {
           .schema("all_use_programs")
           .from("top_botton_program")
           .select("id, title, created_at")
-          .order("created_at", { ascending: false })
         if (!error && Array.isArray(data)) {
-          setNotices(data)
+          const sorted = [...data].sort((a, b) =>
+            a.title.localeCompare(b.title, ["ko", "en"], { numeric: true, sensitivity: "base" })
+          )
+          setNotices(sorted)
         } else {
           setNotices([])
         }
@@ -64,8 +66,8 @@ export default function NoticesListPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">공지사항 목록</h1>
-            <p className="text-muted-foreground mt-1">전체 공지 제목 리스트</p>
+            <h1 className="text-3xl font-bold text-foreground">상하차지 목록</h1>
+            <p className="text-muted-foreground mt-1">상하차지 제목 리스트</p>
           </div>
         </div>
 
@@ -106,7 +108,7 @@ export default function NoticesListPage() {
         )}
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          총 {notices.length}개의 공지사항
+          총 {notices.length}개의 상하차지
         </p>
       </div>
     </div>

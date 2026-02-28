@@ -40,6 +40,21 @@ function getEmbedUrl(url: string): string | null {
   return null
 }
 
+async function verifyAuth(authId: string, authPs: string): Promise<boolean> {
+  const { createClient } = await import("@/lib/supabase/client")
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("all_program_auths")
+    .select("auth_id, auth_ps")
+    .eq("company_code", "human")
+    .eq("auth_id", authId)
+    .eq("auth_ps", authPs)
+    .maybeSingle()
+
+  if (error || !data) return false
+  return true
+}
+
 export default function EditNoticePage() {
   const params = useParams()
   const router = useRouter()
@@ -50,7 +65,8 @@ export default function EditNoticePage() {
   const [images, setImages] = useState<string[]>([])
   const [attachments, setAttachments] = useState<any[]>([])
   const [videoUrl, setVideoUrl] = useState("")
-  const [password, setPassword] = useState(searchParams.get("password") || "")
+  const [authId, setAuthId] = useState(searchParams.get("authId") || "")
+  const [authPs, setAuthPs] = useState(searchParams.get("authPs") || "")
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -96,7 +112,7 @@ export default function EditNoticePage() {
     try {
       const formData = new FormData()
       formData.append("file", files[0])
-      formData.append("adminPassword", password)
+      formData.append("adminPassword", authPs)
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -127,7 +143,7 @@ export default function EditNoticePage() {
       for (let i = 0; i < files.length; i++) {
         const formData = new FormData()
         formData.append("file", files[i])
-        formData.append("adminPassword", password)
+        formData.append("adminPassword", authPs)
 
         const response = await fetch("/api/upload", {
           method: "POST",
@@ -161,13 +177,20 @@ export default function EditNoticePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!password) {
-      alert("관리자 비밀번호를 입력해주세요.")
+    if (!authId || !authPs) {
+      alert("아이디와 비밀번호를 모두 입력해주세요.")
       return
     }
 
     setIsSaving(true)
     try {
+      const valid = await verifyAuth(authId, authPs)
+      if (!valid) {
+        alert("아이디 또는 비밀번호가 올바르지 않습니다.")
+        setIsSaving(false)
+        return
+      }
+
       const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
       const { error } = await supabase
@@ -222,15 +245,27 @@ export default function EditNoticePage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Label htmlFor="password">관리자 비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+              <div className="space-y-2">
+                <div>
+                  <Label htmlFor="authId">관리자 아이디</Label>
+                  <Input
+                    id="authId"
+                    type="text"
+                    value={authId}
+                    onChange={(e) => setAuthId(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="authPs">관리자 비밀번호</Label>
+                  <Input
+                    id="authPs"
+                    type="password"
+                    value={authPs}
+                    onChange={(e) => setAuthPs(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
               <div>

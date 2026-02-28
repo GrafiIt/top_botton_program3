@@ -84,6 +84,7 @@ export function SiteFooter() {
         </div>
         <div className="mt-12 border-t border-slate-800 pt-8 text-center text-xs text-slate-500">
           <p>{t.footer.copyright[language]}</p>
+          <p className="mt-2 text-center text-slate-400" style={{ fontSize: "12px" }}>-휴먼로지텍-</p>
         </div>
       </div>
     </footer>

@@ -17,6 +17,7 @@ interface Notice {
   content: string
   images?: string[]
   attachments?: any[]
+  video_url?: string | null
 }
 
 export default function EditNoticePage() {
@@ -28,6 +29,7 @@ export default function EditNoticePage() {
   const [content, setContent] = useState("")
   const [images, setImages] = useState<string[]>([])
   const [attachments, setAttachments] = useState<any[]>([])
+  const [videoUrl, setVideoUrl] = useState("")
   const [password, setPassword] = useState(searchParams.get("password") || "")
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
@@ -48,6 +50,7 @@ export default function EditNoticePage() {
       setContent(data.content)
       setImages(data.images || [])
       setAttachments(data.attachments || [])
+      setVideoUrl(data.video_url || "")
     } catch {
       // silently handle fetch error
     } finally {
@@ -143,6 +146,7 @@ export default function EditNoticePage() {
           content,
           images,
           attachments,
+          video_url: videoUrl || null,
           adminPassword: password,
         }),
       })
@@ -217,6 +221,29 @@ export default function EditNoticePage() {
                   rows={10}
                   required
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="videoUrl">동영상 URL</Label>
+                <p className="text-sm text-muted-foreground mb-2">외부 동영상 URL을 입력하면 본문 상단에 표시됩니다 (YouTube, Vimeo 등)</p>
+                <Input
+                  id="videoUrl"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                {videoUrl && (
+                  <div className="mt-3 rounded-lg overflow-hidden border">
+                    <video
+                      src={videoUrl}
+                      controls
+                      preload="metadata"
+                      className="w-full"
+                    >
+                      이 브라우저는 동영상을 지원하지 않습니다.
+                    </video>
+                  </div>
+                )}
               </div>
 
               <div>

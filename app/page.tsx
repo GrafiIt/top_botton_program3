@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { PlusCircle, Calendar, Eye, List } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { PlusCircle, Calendar, Eye, List, Search, X } from "lucide-react"
 
 interface Notice {
   id: string
@@ -17,6 +18,7 @@ interface Notice {
 
 export default function HomePage() {
   const [notices, setNotices] = useState<Notice[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
 
@@ -62,6 +64,10 @@ export default function HomePage() {
     }
   }
 
+  const filteredNotices = notices.filter((notice) =>
+    notice.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   const handleLogout = () => {
     sessionStorage.removeItem("admin_logged_in")
     setIsAdmin(false)
@@ -97,6 +103,27 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* 검색 바 */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+          <Input
+            type="text"
+            placeholder="제목으로 검색..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-10 h-12 text-base"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="검색어 지우기"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">로딩 중...</p>
@@ -107,9 +134,24 @@ export default function HomePage() {
               <p className="text-muted-foreground">아직 등록된 공지사항이 없습니다.</p>
             </CardContent>
           </Card>
+        ) : filteredNotices.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Search className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">
+                <span className="font-semibold text-foreground">&ldquo;{searchQuery}&rdquo;</span> 에 해당하는 공지사항이 없습니다.
+              </p>
+            </CardContent>
+          </Card>
         ) : (
+          <>
+            {searchQuery && (
+              <p className="text-sm text-muted-foreground mb-4">
+                <span className="font-semibold text-foreground">&ldquo;{searchQuery}&rdquo;</span> 검색 결과 {filteredNotices.length}건
+              </p>
+            )}
           <div className="grid gap-6">
-            {notices.map((notice) => (
+            {filteredNotices.map((notice) => (
               <Card key={notice.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <Link href={`/notices/${notice.id}`}>
@@ -139,6 +181,7 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
+          </>
         )}
       </div>
     </div>

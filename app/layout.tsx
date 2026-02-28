@@ -5,6 +5,7 @@ import { JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { RemoveBadge } from "@/components/remove-badge"
 import { LanguageProvider } from "@/contexts/language-context"
+import { SiteFooter } from "@/components/site-footer"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default function RootLayout({
         <LanguageProvider>
           <div className="relative flex min-h-screen flex-col">
             <main className="flex-1">{children}</main>
+            <SiteFooter />
           </div>
         </LanguageProvider>
         <RemoveBadge />

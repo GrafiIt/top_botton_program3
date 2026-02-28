@@ -4,22 +4,59 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Edit, Trash2 } from "lucide-react"
+
+async function verifyAuth(authId: string, authPs: string): Promise<boolean> {
+  const { createClient } = await import("@/lib/supabase/client")
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("all_program_auths")
+    .select("auth_id, auth_ps")
+    .eq("company_code", "human")
+    .eq("auth_id", authId)
+    .eq("auth_ps", authPs)
+    .maybeSingle()
+
+  if (error || !data) return false
+  return true
+}
 
 export function NoticeAdminPanel({ noticeId }: { noticeId: string }) {
   const router = useRouter()
   const [showAdminPanel, setShowAdminPanel] = useState(false)
-  const [password, setPassword] = useState("")
+  const [authId, setAuthId] = useState("")
+  const [authPs, setAuthPs] = useState("")
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
 
-  const handleDelete = async () => {
-    if (!password) {
-      alert("관리자 비밀번호를 입력해주세요.")
+  const handleEditClick = async () => {
+    if (!authId || !authPs) {
+      alert("아이디와 비밀번호를 모두 입력해주세요.")
       return
     }
+    setIsVerifying(true)
+    const valid = await verifyAuth(authId, authPs)
+    setIsVerifying(false)
+    if (!valid) {
+      alert("아이디 또는 비밀번호가 올바르지 않습니다.")
+      return
+    }
+    router.push(`/notices/${noticeId}/edit?authId=${encodeURIComponent(authId)}&authPs=${encodeURIComponent(authPs)}`)
+  }
 
-    if (password !== "ener1004@") {
-      alert("비밀번호가 올바르지 않습니다.")
+  const handleDelete = async () => {
+    if (!authId || !authPs) {
+      alert("아이디와 비밀번호를 모두 입력해주세요.")
+      return
+    }
+    setIsVerifying(true)
+    const valid = await verifyAuth(authId, authPs)
+    setIsVerifying(false)
+    if (!valid) {
+      alert("아이디 또는 비밀번호가 올바르지 않습니다.")
+      setShowDeleteConfirm(false)
       return
     }
 
@@ -27,6 +64,7 @@ export function NoticeAdminPanel({ noticeId }: { noticeId: string }) {
       const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
       const { error } = await supabase
+        .schema("all_use_programs")
         .from("top_botton_program")
         .delete()
         .eq("id", noticeId)
@@ -57,28 +95,43 @@ export function NoticeAdminPanel({ noticeId }: { noticeId: string }) {
       ) : (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">관리자 기능</h3>
-          <input
-            type="password"
-            placeholder="관리자 비밀번호"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg"
-          />
+          <div className="space-y-2">
+            <div>
+              <Label htmlFor="admin-auth-id">아이디</Label>
+              <Input
+                id="admin-auth-id"
+                type="text"
+                placeholder="관리자 아이디"
+                value={authId}
+                onChange={(e) => setAuthId(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="admin-auth-ps">비밀번호</Label>
+              <Input
+                id="admin-auth-ps"
+                type="password"
+                placeholder="관리자 비밀번호"
+                value={authPs}
+                onChange={(e) => setAuthPs(e.target.value)}
+              />
+            </div>
+          </div>
           <div className="flex gap-4">
             <Button
               variant="outline"
               className="gap-2 bg-transparent"
-              onClick={() => router.push(`/notices/${noticeId}/edit?password=${password}`)}
-              disabled={!password}
+              onClick={handleEditClick}
+              disabled={!authId || !authPs || isVerifying}
             >
               <Edit className="w-4 h-4" />
-              수정
+              {isVerifying ? "확인 중..." : "수정"}
             </Button>
             <Button
               variant="destructive"
               className="gap-2"
               onClick={() => setShowDeleteConfirm(true)}
-              disabled={!password}
+              disabled={!authId || !authPs || isVerifying}
             >
               <Trash2 className="w-4 h-4" />
               삭제
@@ -99,8 +152,8 @@ export function NoticeAdminPanel({ noticeId }: { noticeId: string }) {
             <CardContent className="space-y-4">
               <p>정말로 이 공지사항을 삭제하시겠습니까?</p>
               <div className="flex gap-4">
-                <Button variant="destructive" onClick={handleDelete} className="flex-1">
-                  삭제
+                <Button variant="destructive" onClick={handleDelete} className="flex-1" disabled={isVerifying}>
+                  {isVerifying ? "확인 중..." : "삭제"}
                 </Button>
                 <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} className="flex-1">
                   취소

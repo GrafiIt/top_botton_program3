@@ -21,12 +21,23 @@ export default function AdminLoginPage() {
     setIsLoading(true)
     setError("")
 
-    // 간단한 관리자 인증
-    if (username === "admin" && password === "ener1004@") {
-      sessionStorage.setItem("admin_logged_in", "true")
-      router.push("/notices-admin/new")
-    } else {
-      setError("아이디 또는 비밀번호가 올바르지 않습니다.")
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        sessionStorage.setItem("admin_logged_in", "true")
+        router.push("/notices-admin/new")
+      } else {
+        setError(data.error || "아이디 또는 비밀번호가 올바르지 않습니다.")
+      }
+    } catch {
+      setError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
     }
 
     setIsLoading(false)

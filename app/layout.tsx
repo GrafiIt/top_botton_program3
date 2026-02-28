@@ -4,14 +4,9 @@ import { Inter } from "next/font/google"
 import { JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { SiteFooter } from "@/components/site-footer"
-import dynamic from "next/dynamic"
 import { RemoveBadge } from "@/components/remove-badge"
 import { LanguageProvider } from "@/contexts/language-context"
-
-const Analytics = dynamic(
-  () => import("@vercel/analytics/next").then((mod) => mod.Analytics),
-  { ssr: false }
-)
+import { AnalyticsWrapper } from "@/components/analytics-wrapper"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -45,7 +40,7 @@ export default function RootLayout({
             <SiteFooter />
           </div>
         </LanguageProvider>
-        <Analytics />
+        <AnalyticsWrapper />
         <RemoveBadge />
       {/* v0 – built-with badge */}
   <div dangerouslySetInnerHTML={{ __html: `<div id="v0-built-with-button-15335969-73fb-4be0-a000-d8244018a7a3" style="

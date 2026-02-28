@@ -118,8 +118,8 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground line-clamp-2">
-                    {notice.content.substring(0, 200)}
-                    {notice.content.length > 200 && "..."}
+                    {(notice.content ?? "").substring(0, 200)}
+                    {(notice.content ?? "").length > 200 && "..."}
                   </p>
                   <Link href={`/notices/${notice.id}`}>
                     <Button variant="ghost" className="mt-4 gap-2">

@@ -4,7 +4,6 @@ import { Inter } from "next/font/google"
 import { JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { SiteFooter } from "@/components/site-footer"
-import { Analytics } from "@vercel/analytics/next"
 import { RemoveBadge } from "@/components/remove-badge"
 import { LanguageProvider } from "@/contexts/language-context"
 
@@ -40,7 +39,6 @@ export default function RootLayout({
             <SiteFooter />
           </div>
         </LanguageProvider>
-        <Analytics />
         <RemoveBadge />
       {/* v0 – built-with badge */}
   <div dangerouslySetInnerHTML={{ __html: `<div id="v0-built-with-button-15335969-73fb-4be0-a000-d8244018a7a3" style="

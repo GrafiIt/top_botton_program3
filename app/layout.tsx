@@ -3,7 +3,6 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { JetBrains_Mono } from "next/font/google"
 import "./globals.css"
-import { SiteFooter } from "@/components/site-footer"
 import { RemoveBadge } from "@/components/remove-badge"
 import { LanguageProvider } from "@/contexts/language-context"
 
@@ -36,7 +35,6 @@ export default function RootLayout({
         <LanguageProvider>
           <div className="relative flex min-h-screen flex-col">
             <main className="flex-1">{children}</main>
-            <SiteFooter />
           </div>
         </LanguageProvider>
         <RemoveBadge />

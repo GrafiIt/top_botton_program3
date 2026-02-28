@@ -6,7 +6,6 @@ import "./globals.css"
 import { SiteFooter } from "@/components/site-footer"
 import { RemoveBadge } from "@/components/remove-badge"
 import { LanguageProvider } from "@/contexts/language-context"
-import { AnalyticsWrapper } from "@/components/analytics-wrapper"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,7 +39,6 @@ export default function RootLayout({
             <SiteFooter />
           </div>
         </LanguageProvider>
-        <AnalyticsWrapper />
         <RemoveBadge />
       {/* v0 – built-with badge */}
   <div dangerouslySetInnerHTML={{ __html: `<div id="v0-built-with-button-15335969-73fb-4be0-a000-d8244018a7a3" style="

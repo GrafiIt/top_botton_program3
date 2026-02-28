@@ -72,8 +72,8 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground">공지사항</h1>
-            <p className="text-muted-foreground mt-2">에너플레이트의 최신 소식을 확인하세요</p>
+            <h1 className="text-4xl font-bold text-foreground">상하차지정보</h1>
+            <p className="text-muted-foreground mt-2">상하차지 최신 소식을 확인하세요</p>
           </div>
           <div className="flex flex-col gap-2 items-end">
             <Link href="/notices-admin/login">

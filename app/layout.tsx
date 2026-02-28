@@ -3,7 +3,6 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { JetBrains_Mono } from "next/font/google"
 import "./globals.css"
-import { SiteFooter } from "@/components/site-footer"
 import { RemoveBadge } from "@/components/remove-badge"
 import { LanguageProvider } from "@/contexts/language-context"
 
@@ -17,11 +16,11 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "ENERPLATE",
-  description: "수소연료전지의 미래를 여는 탄소복합분리판 전문기업",
+  title: "상하차지 정보",
+  description: "상하차지 최신 소식을 확인하세요",
   icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 }
 
@@ -36,7 +35,6 @@ export default function RootLayout({
         <LanguageProvider>
           <div className="relative flex min-h-screen flex-col">
             <main className="flex-1">{children}</main>
-            <SiteFooter />
           </div>
         </LanguageProvider>
         <RemoveBadge />

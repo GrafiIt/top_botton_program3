@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { PlusCircle, Calendar, Eye } from "lucide-react"
+import { PlusCircle, Calendar, Eye, List } from "lucide-react"
 
 interface Notice {
   id: string
@@ -77,11 +77,18 @@ export default function HomePage() {
             <p className="text-muted-foreground mt-2">상하차지 최신 소식을 확인하세요</p>
           </div>
           <div className="flex flex-col gap-2 items-end">
-            <Link href="/notices-admin/login">
-              <Button size="lg" className="gap-2">
-                <PlusCircle className="w-5 h-5" />새 공지 작성
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/notices/list">
+                <Button size="lg" variant="outline" className="gap-2">
+                  <List className="w-5 h-5" />리스트 보기
+                </Button>
+              </Link>
+              <Link href="/notices-admin/login">
+                <Button size="lg" className="gap-2">
+                  <PlusCircle className="w-5 h-5" />새 공지 작성
+                </Button>
+              </Link>
+            </div>
             {isAdmin && (
               <Button size="sm" variant="ghost" onClick={handleLogout} className="text-xs">
                 로그아웃

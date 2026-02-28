@@ -4,9 +4,14 @@ import { Inter } from "next/font/google"
 import { JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { SiteFooter } from "@/components/site-footer"
-import { Analytics } from "@vercel/analytics/next"
+import dynamic from "next/dynamic"
 import { RemoveBadge } from "@/components/remove-badge"
 import { LanguageProvider } from "@/contexts/language-context"
+
+const Analytics = dynamic(
+  () => import("@vercel/analytics/next").then((mod) => mod.Analytics),
+  { ssr: false }
+)
 
 const inter = Inter({
   subsets: ["latin"],

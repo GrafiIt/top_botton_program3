@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
       const data = await res.json()
 
       if (res.ok && data.success) {
-        sessionStorage.setItem("admin_logged_in", "true")
+        localStorage.setItem("admin_logged_in", "true")
         router.push("/notices-admin/new")
       } else {
         setError(data.error || "아이디 또는 비밀번호가 올바르지 않습니다.")

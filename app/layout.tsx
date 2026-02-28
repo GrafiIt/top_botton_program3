@@ -16,11 +16,11 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "ENERPLATE",
-  description: "수소연료전지의 미래를 여는 탄소복합분리판 전문기업",
+  title: "상하차지 정보",
+  description: "상하차지 최신 소식을 확인하세요",
   icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 }
 

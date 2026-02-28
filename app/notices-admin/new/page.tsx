@@ -42,7 +42,7 @@ export default function NewNoticePage() {
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    const isLoggedIn = sessionStorage.getItem("admin_logged_in")
+    const isLoggedIn = localStorage.getItem("admin_logged_in")
     if (!isLoggedIn) {
       router.push("/notices-admin/login")
     }
@@ -126,7 +126,7 @@ export default function NewNoticePage() {
   }
 
   const handleLogout = () => {
-    sessionStorage.removeItem("admin_logged_in")
+    localStorage.removeItem("admin_logged_in")
     alert("로그아웃되었습니다.")
     router.push("/notices")
   }

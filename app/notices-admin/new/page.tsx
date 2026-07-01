@@ -48,27 +48,35 @@ export default function NewNoticePage() {
     }
   }, [router])
 
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-  }
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
 
     setIsUploading(true)
     try {
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
+
       for (let i = 0; i < files.length; i++) {
-        const dataUrl = await fileToBase64(files[i])
-        setImages((prev) => [...prev, dataUrl])
+        const file = files[i]
+        const filePath = `images/${Date.now()}_${file.name}`
+
+        const { error: uploadError } = await supabase.storage
+          .from("notices")
+          .upload(filePath, file, { upsert: false })
+
+        if (uploadError) {
+          console.error("이미지 업로드 오류:", uploadError)
+          alert("이미지 업로드 중 오류가 발생했습니다: " + uploadError.message)
+          return
+        }
+
+        const { data: urlData } = supabase.storage.from("notices").getPublicUrl(filePath)
+        setImages((prev) => [...prev, urlData.publicUrl])
       }
-    } catch (error) {
-      alert("이미지 업로드 중 오류가 발생했습니다.")
+    } catch (error: any) {
+      console.error("이미지 업로드 예외:", error)
+      alert("이미지 업로드 중 오류가 발생했습니다: " + error?.message)
     } finally {
       setIsUploading(false)
     }
@@ -80,12 +88,29 @@ export default function NewNoticePage() {
 
     setIsUploading(true)
     try {
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
+
       for (let i = 0; i < files.length; i++) {
-        const dataUrl = await fileToBase64(files[i])
-        setAttachments((prev) => [...prev, { name: files[i].name, url: dataUrl, path: files[i].name }])
+        const file = files[i]
+        const filePath = `attachments/${Date.now()}_${file.name}`
+
+        const { error: uploadError } = await supabase.storage
+          .from("notices")
+          .upload(filePath, file, { upsert: false })
+
+        if (uploadError) {
+          console.error("첨부파일 업로드 오류:", uploadError)
+          alert("첨부파일 업로드 중 오류가 발생했습니다: " + uploadError.message)
+          return
+        }
+
+        const { data: urlData } = supabase.storage.from("notices").getPublicUrl(filePath)
+        setAttachments((prev) => [...prev, { name: file.name, url: urlData.publicUrl }])
       }
-    } catch (error) {
-      alert("파일 업로드 중 오류가 발생했습니다.")
+    } catch (error: any) {
+      console.error("첨부파일 업로드 예외:", error)
+      alert("첨부파일 업로드 중 오류가 발생했습니다: " + error?.message)
     } finally {
       setIsUploading(false)
     }

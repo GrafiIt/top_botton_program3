@@ -2,10 +2,10 @@
 
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
-import TextAlign from "@tiptap/extension-text-align"
-import TextStyle from "@tiptap/extension-text-style"
-import Color from "@tiptap/extension-color"
-import Heading from "@tiptap/extension-heading"
+import { TextAlign } from "@tiptap/extension-text-align"
+import { TextStyle } from "@tiptap/extension-text-style"
+import { Color } from "@tiptap/extension-color"
+import { Heading } from "@tiptap/extension-heading"
 import { useEffect } from "react"
 import { cn } from "@/lib/utils"
 import {

@@ -19,6 +19,16 @@ interface Notice {
   video_url?: string | null
 }
 
+// 본문 렌더링용 전처리:
+// - 최신 데이터(HTML 포함): 그대로 렌더링
+// - 과거 데이터(일반 텍스트 + \n 줄바꿈): <br> 태그로 변환해 줄바꿈 유지
+function renderContent(raw: string): string {
+  if (!raw) return ""
+  const hasHtmlTag = /<\/?[a-z][\s\S]*>/i.test(raw)
+  if (hasHtmlTag) return raw
+  return raw.replace(/\r\n/g, "\n").replace(/\n/g, "<br>")
+}
+
 function getEmbedUrl(url: string): string | null {
   if (!url) return null
 
@@ -138,9 +148,10 @@ export default function NoticeDetailPage() {
               </div>
             )}
 
-            <div className="prose max-w-none">
-              <p className="whitespace-pre-wrap text-lg leading-relaxed">{notice.content}</p>
-            </div>
+            <div
+              className="prose max-w-none text-lg leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: renderContent(notice.content) }}
+            />
 
             {notice.attachments && notice.attachments.length > 0 && (
               <div className="space-y-4 pt-6 border-t">

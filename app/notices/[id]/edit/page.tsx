@@ -40,6 +40,17 @@ function getEmbedUrl(url: string): string | null {
   return null
 }
 
+// 과거 데이터 전처리: DB에 HTML 태그 없이 저장된 일반 텍스트(\n 줄바꿈)를
+// Tiptap이 올바르게 렌더링하도록 <br> 태그로 변환한다.
+function normalizeContent(raw: string): string {
+  if (!raw) return ""
+  // 이미 HTML 태그가 포함된 최신 데이터라면 그대로 사용
+  const hasHtmlTag = /<\/?[a-z][\s\S]*>/i.test(raw)
+  if (hasHtmlTag) return raw
+  // 과거 일반 텍스트 데이터: 줄바꿈을 <br>로 변환
+  return raw.replace(/\r\n/g, "\n").replace(/\n/g, "<br>")
+}
+
 async function verifyAuth(authId: string, authPs: string): Promise<boolean> {
   const { createClient } = await import("@/lib/supabase/client")
   const supabase = createClient()
@@ -93,7 +104,7 @@ export default function EditNoticePage() {
       }
       setNotice(data)
       setTitle(data.title)
-      setContent(data.content)
+      setContent(normalizeContent(data.content))
       setImages(data.images || [])
       setAttachments(data.attachments || [])
       setVideoUrl(data.video_url || "")

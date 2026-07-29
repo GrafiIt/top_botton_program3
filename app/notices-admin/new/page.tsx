@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { X, ArrowLeft, Save } from "lucide-react"
+import { RichTextEditor } from "@/components/ui/rich-text-editor"
 
 function getEmbedUrl(url: string): string | null {
   if (!url) return null
@@ -186,15 +186,12 @@ export default function NewNoticePage() {
               </div>
 
               <div>
-                <Label htmlFor="content">내용</Label>
-                <Textarea
-                  id="content"
+                <Label>내용</Label>
+                <RichTextEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={setContent}
                   placeholder="공지사항 내용을 입력하세요"
-                  rows={60}
-                  required
-                  className="min-h-[600px]"
+                  minHeight="600px"
                 />
               </div>
 

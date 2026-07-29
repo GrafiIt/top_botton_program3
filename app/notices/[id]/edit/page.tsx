@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { X, ArrowLeft, Save } from "lucide-react"
+import { RichTextEditor } from "@/components/ui/rich-text-editor"
 
 interface Notice {
   id: string
@@ -274,13 +274,11 @@ export default function EditNoticePage() {
               </div>
 
               <div>
-                <Label htmlFor="content">내용</Label>
-                <Textarea
-                  id="content"
+                <Label>내용</Label>
+                <RichTextEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  rows={10}
-                  required
+                  onChange={setContent}
+                  minHeight="400px"
                 />
               </div>
 

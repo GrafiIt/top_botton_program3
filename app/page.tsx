@@ -16,6 +16,20 @@ interface Notice {
   attachments?: any[]
 }
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>?/gm, "")   // HTML 태그 제거
+    .replace(/&nbsp;/g, " ")     // HTML 엔티티 → 공백
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n/g, " ")         // 과거 데이터의 \n 줄바꿈 → 공백
+    .replace(/\s+/g, " ")        // 연속 공백 정리
+    .trim()
+}
+
 export default function HomePage() {
   const [notices, setNotices] = useState<Notice[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -168,8 +182,8 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground line-clamp-2">
-                    {(notice.content ?? "").substring(0, 200)}
-                    {(notice.content ?? "").length > 200 && "..."}
+                    {stripHtml(notice.content ?? "").substring(0, 200)}
+                    {stripHtml(notice.content ?? "").length > 200 && "..."}
                   </p>
                   <Link href={`/notices/${notice.id}`}>
                     <Button variant="ghost" className="mt-4 gap-2">

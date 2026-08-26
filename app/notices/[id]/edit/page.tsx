@@ -126,7 +126,9 @@ export default function EditNoticePage() {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        const filePath = `images/${Date.now()}_${file.name}`
+        const fileExt = file.name.split(".").pop() || ""
+        const safeFileName = crypto.randomUUID() + (fileExt ? "." + fileExt : "")
+        const filePath = `images/${safeFileName}`
         const { error } = await supabase.storage.from("notices").upload(filePath, file, { upsert: false })
 
         if (error) {
@@ -156,7 +158,9 @@ export default function EditNoticePage() {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        const filePath = `attachments/${Date.now()}_${file.name}`
+        const fileExt = file.name.split(".").pop() || ""
+        const safeFileName = crypto.randomUUID() + (fileExt ? "." + fileExt : "")
+        const filePath = `attachments/${safeFileName}`
         const { error } = await supabase.storage.from("notices").upload(filePath, file, { upsert: false })
 
         if (error) {

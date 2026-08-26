@@ -121,25 +121,25 @@ export default function EditNoticePage() {
 
     setIsUploading(true)
     try {
-      const formData = new FormData()
-      formData.append("file", files[0])
-      formData.append("adminPassword", authPs)
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const filePath = `images/${Date.now()}_${file.name}`
+        const { error } = await supabase.storage.from("notices").upload(filePath, file, { upsert: false })
 
-      if (!response.ok) {
-        const error = await response.json()
-        alert(error.error || "업로드 실패")
-        return
+        if (error) {
+          alert("업로드 중 오류가 발생했습니다: " + error.message)
+          continue
+        }
+
+        const { data: urlData } = supabase.storage.from("notices").getPublicUrl(filePath)
+        setImages((prev) => [...prev, urlData.publicUrl])
       }
-
-      const data = await response.json()
-      setImages([...images, data.url])
-    } catch {
-      alert("이미지 업로드 중 오류가 발생했습니다.")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      alert("업로드 중 오류가 발생했습니다: " + message)
     } finally {
       setIsUploading(false)
     }
@@ -151,27 +151,25 @@ export default function EditNoticePage() {
 
     setIsUploading(true)
     try {
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
+
       for (let i = 0; i < files.length; i++) {
-        const formData = new FormData()
-        formData.append("file", files[i])
-        formData.append("adminPassword", authPs)
+        const file = files[i]
+        const filePath = `attachments/${Date.now()}_${file.name}`
+        const { error } = await supabase.storage.from("notices").upload(filePath, file, { upsert: false })
 
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          alert(error.error || "업로드 실패")
+        if (error) {
+          alert("업로드 중 오류가 발생했습니다: " + error.message)
           continue
         }
 
-        const data = await response.json()
-        setAttachments([...attachments, { name: files[i].name, url: data.url, path: data.path }])
+        const { data: urlData } = supabase.storage.from("notices").getPublicUrl(filePath)
+        setAttachments((prev) => [...prev, { name: file.name, url: urlData.publicUrl, path: filePath }])
       }
-    } catch {
-      alert("파일 업로드 중 오류가 발생했습니다.")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      alert("업로드 중 오류가 발생했습니다: " + message)
     } finally {
       setIsUploading(false)
     }

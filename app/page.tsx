@@ -1,203 +1,37 @@
-"use client"
-
-import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { PlusCircle, Calendar, Eye, List, Search, X } from "lucide-react"
 
-interface Notice {
-  id: string
-  title: string
-  content: string
-  created_at: string
-  images?: string[]
-  attachments?: any[]
-}
-
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>?/gm, "")   // HTML 태그 제거
-    .replace(/&nbsp;/g, " ")     // HTML 엔티티 → 공백
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\n/g, " ")         // 과거 데이터의 \n 줄바꿈 → 공백
-    .replace(/\s+/g, " ")        // 연속 공백 정리
-    .trim()
-}
+const menuItems = [
+  { label: "Tool Box Meeting", href: "#" },
+  { label: "교육 현황 관리", href: "#" },
+  { label: "MSDS", href: "#" },
+  { label: "상/하차지 정보", href: "/loading-info" },
+  { label: "벙커링 현황", href: "#" },
+  { label: "선박유 도착지 정보", href: "#" },
+  { label: "비상대응 절차서", href: "#" },
+  { label: "휴게소 정보", href: "#" },
+  { label: "작업 지침서", href: "#" },
+  { label: "비상연락망", href: "#" },
+]
 
 export default function HomePage() {
-  const [notices, setNotices] = useState<Notice[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
-
-  useEffect(() => {
-    const adminLoggedIn = sessionStorage.getItem("admin_logged_in")
-    setIsAdmin(adminLoggedIn === "true")
-    fetchNotices()
-  }, [])
-
-  const fetchNotices = async () => {
-    try {
-      const { createClient } = await import("@/lib/supabase/client")
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .schema("all_use_programs")
-        .from("top_botton_program")
-        .select("*")
-        .order("created_at", { ascending: false })
-      if (!error && Array.isArray(data)) {
-        setNotices(data)
-      } else {
-        setNotices([])
-      }
-    } catch (error) {
-      setNotices([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "날짜 정보 없음"
-    try {
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) return "날짜 형식 오류"
-      return date.toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    } catch {
-      return "날짜 형식 오류"
-    }
-  }
-
-  const filteredNotices = notices.filter((notice) =>
-    notice.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin_logged_in")
-    setIsAdmin(false)
-    alert("로그아웃되었습니다.")
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground">상하차지정보</h1>
-            <p className="text-muted-foreground mt-2">상하차지 최신 소식을 확인하세요</p>
-          </div>
-          <div className="flex flex-col gap-2 items-end">
-            <div className="flex gap-2">
-              <Link href="/notices/list">
-                <Button size="lg" variant="outline" className="gap-2">
-                  <List className="w-5 h-5" />리스트 보기
-                </Button>
-              </Link>
-              <Link href="/notices-admin/login">
-                <Button size="lg" className="gap-2">
-                  <PlusCircle className="w-5 h-5" />새 공지 작성
-                </Button>
-              </Link>
-            </div>
-            {isAdmin && (
-              <Button size="sm" variant="ghost" onClick={handleLogout} className="text-xs">
-                로그아웃
-              </Button>
-            )}
-          </div>
-        </div>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-background px-4 py-8">
+      <h1 className="sr-only">업무 지원 메뉴</h1>
 
-        {/* 검색 바 */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
-          <Input
-            type="text"
-            placeholder="제목으로 검색..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-10 h-12 text-base"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="검색어 지우기"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">로딩 중...</p>
-          </div>
-        ) : notices.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">아직 등록된 공지사항이 없습니다.</p>
-            </CardContent>
-          </Card>
-        ) : filteredNotices.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Search className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">
-                <span className="font-semibold text-foreground">&ldquo;{searchQuery}&rdquo;</span> 에 해당하는 공지사항이 없습니다.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            {searchQuery && (
-              <p className="text-sm text-muted-foreground mb-4">
-                <span className="font-semibold text-foreground">&ldquo;{searchQuery}&rdquo;</span> 검색 결과 {filteredNotices.length}건
-              </p>
-            )}
-          <div className="grid gap-6">
-            {filteredNotices.map((notice) => (
-              <Card key={notice.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <Link href={`/notices/${notice.id}`}>
-                    <CardTitle className="text-2xl hover:text-primary transition-colors cursor-pointer">
-                      {notice.title}
-                    </CardTitle>
-                  </Link>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(notice.created_at)}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground line-clamp-2">
-                    {stripHtml(notice.content ?? "").substring(0, 200)}
-                    {stripHtml(notice.content ?? "").length > 200 && "..."}
-                  </p>
-                  <Link href={`/notices/${notice.id}`}>
-                    <Button variant="ghost" className="mt-4 gap-2">
-                      <Eye className="w-4 h-4" />
-                      자세히 보기
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          </>
-        )}
-      </div>
-    </div>
+      <nav aria-label="업무 지원 메뉴">
+        <ul className="grid grid-cols-3 gap-3 sm:gap-4">
+          {menuItems.map((item, index) => (
+            <li key={item.label} className={index === menuItems.length - 1 ? "col-start-2" : undefined}>
+              <Link
+                href={item.href}
+                className="flex aspect-square w-full items-center justify-center rounded-2xl bg-[#0b1f3a] p-3 text-center text-sm font-semibold leading-relaxed text-white shadow-sm transition-transform hover:scale-[1.02] hover:bg-[#102d52] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b1f3a] focus-visible:ring-offset-2 active:scale-[0.98] sm:rounded-3xl sm:text-base"
+              >
+                <span className="text-balance break-keep">{item.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </main>
   )
 }

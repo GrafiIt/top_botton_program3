@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react"
 import { ArrowLeft, Settings, X } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 type TabKey = "notices" | "important"
 
 type ToolboxContent = Record<TabKey, string>
 
-const STORAGE_KEY = "toolbox-meeting-content"
 const MAX_LINES = 10
 
 const initialContent: ToolboxContent = {
@@ -36,21 +36,26 @@ export default function ToolboxPage() {
   const [loginError, setLoginError] = useState("")
 
   useEffect(() => {
-    const savedContent = window.localStorage.getItem(STORAGE_KEY)
+    const fetchContent = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .schema("drivermgm")
+        .from("human_gw_notice")
+        .select("notices, important")
+        .eq("id", 1)
+        .single()
 
-    if (!savedContent) return
+      if (error || !data) return
 
-    try {
-      const parsedContent = JSON.parse(savedContent) as Partial<ToolboxContent>
       const restoredContent = {
-        notices: parsedContent.notices ?? initialContent.notices,
-        important: parsedContent.important ?? initialContent.important,
+        notices: data.notices ?? initialContent.notices,
+        important: data.important ?? initialContent.important,
       }
       setContent(restoredContent)
       setDraftContent(restoredContent)
-    } catch {
-      window.localStorage.removeItem(STORAGE_KEY)
     }
+
+    void fetchContent()
   }, [])
 
   const openLoginModal = () => {
@@ -86,14 +91,25 @@ export default function ToolboxPage() {
     setDraftContent((previous) => ({ ...previous, [activeTab]: value }))
   }
 
-  const saveContent = () => {
+  const saveContent = async () => {
     if (getLineCount(draftContent.notices) > MAX_LINES || getLineCount(draftContent.important) > MAX_LINES) {
       window.alert("각 탭의 내용은 최대 10줄까지 입력할 수 있습니다.")
       return
     }
 
+    const supabase = createClient()
+    const { error } = await supabase.schema("drivermgm").from("human_gw_notice").upsert({
+      id: 1,
+      notices: draftContent.notices,
+      important: draftContent.important,
+    })
+
+    if (error) {
+      window.alert("저장 중 오류가 발생했습니다.")
+      return
+    }
+
     setContent(draftContent)
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draftContent))
     setIsEditing(false)
     window.alert("내용이 저장되었습니다.")
   }

@@ -7,23 +7,25 @@ import { createClient } from "@/lib/supabase/client"
 
 type TabKey = "notices" | "important"
 
-type ToolboxContent = Record<TabKey, string>
+type ToolboxContent = Record<TabKey, string[]>
 
 const MAX_LINES = 10
 
+function toFixedLines(value: string) {
+  return [...value.split("\n").slice(0, MAX_LINES), ...Array(MAX_LINES).fill("")].slice(0, MAX_LINES)
+}
+
 const initialContent: ToolboxContent = {
-  notices: "작업 전 안전 장비를 반드시 확인해 주세요.\n금일 작업 내용을 팀원들과 공유해 주세요.\n작업 종료 후 주변 정리를 확인해 주세요.",
-  important: "위험 요소 발견 시 즉시 작업을 중지해 주세요.\n비상 상황 발생 시 현장 책임자에게 보고해 주세요.",
+  notices: toFixedLines(
+    "작업 전 안전 장비를 반드시 확인해 주세요.\n금일 작업 내용을 팀원들과 공유해 주세요.\n작업 종료 후 주변 정리를 확인해 주세요.",
+  ),
+  important: toFixedLines("위험 요소 발견 시 즉시 작업을 중지해 주세요.\n비상 상황 발생 시 현장 책임자에게 보고해 주세요."),
 }
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: "notices", label: "공지사항" },
   { key: "important", label: "중요사항" },
 ]
-
-function getLineCount(value: string) {
-  return value === "" ? 0 : value.split("\n").length
-}
 
 export default function ToolboxPage() {
   const router = useRouter()
@@ -48,8 +50,8 @@ export default function ToolboxPage() {
       if (error || !data) return
 
       const restoredContent = {
-        notices: data.notices ?? initialContent.notices,
-        important: data.important ?? initialContent.important,
+        notices: data.notices == null ? initialContent.notices : toFixedLines(data.notices),
+        important: data.important == null ? initialContent.important : toFixedLines(data.important),
       }
       setContent(restoredContent)
       setDraftContent(restoredContent)
@@ -82,26 +84,19 @@ export default function ToolboxPage() {
     closeLoginModal()
   }
 
-  const handleDraftChange = (value: string) => {
-    if (getLineCount(value) > MAX_LINES) {
-      window.alert("각 탭의 내용은 최대 10줄까지 입력할 수 있습니다.")
-      return
-    }
-
-    setDraftContent((previous) => ({ ...previous, [activeTab]: value }))
+  const handleDraftChange = (index: number, value: string) => {
+    setDraftContent((previous) => ({
+      ...previous,
+      [activeTab]: previous[activeTab].map((line, lineIndex) => (lineIndex === index ? value : line)),
+    }))
   }
 
   const saveContent = async () => {
-    if (getLineCount(draftContent.notices) > MAX_LINES || getLineCount(draftContent.important) > MAX_LINES) {
-      window.alert("각 탭의 내용은 최대 10줄까지 입력할 수 있습니다.")
-      return
-    }
-
     const supabase = createClient()
     const { error } = await supabase.schema("drivermgm").from("human_gw_notice").upsert({
       id: 1,
-      notices: draftContent.notices,
-      important: draftContent.important,
+      notices: draftContent.notices.join("\n"),
+      important: draftContent.important.join("\n"),
     })
 
     if (error) {
@@ -119,8 +114,7 @@ export default function ToolboxPage() {
     setIsEditing(false)
   }
 
-  const activeLines = content[activeTab].split("\n").filter((line) => line.trim().length > 0)
-  const activeLineCount = getLineCount(draftContent[activeTab])
+  const activeLines = content[activeTab].filter((line) => line.trim().length > 0)
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-white text-slate-950 shadow-sm">
@@ -191,20 +185,22 @@ export default function ToolboxPage() {
 
         {isEditing ? (
           <div className="flex flex-col gap-4">
-            <label htmlFor="toolbox-content" className="text-sm font-semibold">
-              {tabs.find((tab) => tab.key === activeTab)?.label} 내용
-            </label>
-            <textarea
-              id="toolbox-content"
-              value={draftContent[activeTab]}
-              onChange={(event) => handleDraftChange(event.target.value)}
-              rows={10}
-              className="min-h-64 w-full resize-none rounded-xl border border-slate-300 bg-white p-4 text-sm leading-7 outline-none transition-shadow focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
-              aria-describedby="line-count"
-            />
-            <p id="line-count" className="text-right text-xs text-slate-500" aria-live="polite">
-              {activeLineCount} / {MAX_LINES}줄
-            </p>
+            <p className="text-sm font-semibold">{tabs.find((tab) => tab.key === activeTab)?.label} 내용</p>
+            <div className="flex flex-col gap-3">
+              {draftContent[activeTab].map((line, index) => (
+                <label key={index} htmlFor={`toolbox-content-${activeTab}-${index}`} className="flex items-center gap-3">
+                  <span className="w-6 shrink-0 text-right text-sm font-semibold text-slate-500">{index + 1}.</span>
+                  <input
+                    id={`toolbox-content-${activeTab}-${index}`}
+                    type="text"
+                    value={line}
+                    onChange={(event) => handleDraftChange(index, event.target.value)}
+                    className="h-11 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition-shadow focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+                    aria-label={`${index + 1}번째 줄`}
+                  />
+                </label>
+              ))}
+            </div>
             <div className="flex gap-3">
               <button
                 type="button"

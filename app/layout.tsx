@@ -1,14 +1,14 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import { JetBrains_Mono } from "next/font/google"
+import { JetBrains_Mono, Noto_Sans_KR } from "next/font/google"
 import "./globals.css"
 import { RemoveBadge } from "@/components/remove-badge"
 import { LanguageProvider } from "@/contexts/language-context"
 import { SiteFooter } from "@/components/site-footer"
 
-const inter = Inter({
+const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
+  weight: "variable",
   variable: "--font-sans",
 })
 const jetbrainsMono = JetBrains_Mono({
@@ -17,8 +17,8 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "상하차지 정보",
-  description: "상하차지 최신 소식을 확인하세요",
+  title: "휴먼로지텍 업무 지원",
+  description: "현장 업무 정보와 작업 지침서를 모바일에서 확인하세요.",
   icons: {
     icon: "/favicon.svg",
     apple: "/favicon.svg",
@@ -31,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ko">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+    <html lang="ko" className="bg-background">
+      <body className={`${notoSansKr.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <LanguageProvider>
           <div className="relative flex min-h-screen flex-col">
             <main className="flex-1">{children}</main>

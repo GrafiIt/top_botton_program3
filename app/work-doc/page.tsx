@@ -42,11 +42,11 @@ export default function WorkDocumentPage() {
   const { data: documents, error, isLoading } = useSWR("work-documents", fetchWorkDocuments)
 
   const filteredDocuments = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase("ko")
+    const normalizedQuery = query.trim().normalize("NFC").toLowerCase()
     if (!normalizedQuery) return documents ?? []
 
     return (documents ?? []).filter((document) =>
-      document.title.toLocaleLowerCase("ko").includes(normalizedQuery),
+      document.title.normalize("NFC").toLowerCase().includes(normalizedQuery),
     )
   }, [documents, query])
 

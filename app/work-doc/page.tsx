@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, FileText, Search, Settings, X } from "lucide-react"
+import { ArrowLeft, ExternalLink, FileText, Search, Settings, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
@@ -25,10 +25,20 @@ async function fetchWorkDocuments(): Promise<WorkDocument[]> {
   return data ?? []
 }
 
+function isIOSDevice() {
+  if (typeof navigator === "undefined") return false
+
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  )
+}
+
 export default function WorkDocumentPage() {
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [selectedDocument, setSelectedDocument] = useState<WorkDocument | null>(null)
+  const [useIOSViewer, setUseIOSViewer] = useState(false)
   const { data: documents, error, isLoading } = useSWR("work-documents", fetchWorkDocuments)
 
   const filteredDocuments = useMemo(() => {
@@ -40,17 +50,31 @@ export default function WorkDocumentPage() {
     )
   }, [documents, query])
 
+  const openDocument = (document: WorkDocument) => {
+    setUseIOSViewer(isIOSDevice())
+    setSelectedDocument(document)
+  }
+
   if (selectedDocument) {
-    const viewerUrl = `${selectedDocument.pdf_url}#toolbar=0&navpanes=0&view=FitH`
+    const viewerUrl = useIOSViewer
+      ? `https://docs.google.com/viewer?url=${encodeURIComponent(selectedDocument.pdf_url)}&embedded=true`
+      : `${selectedDocument.pdf_url}#toolbar=0&navpanes=0&view=FitH`
 
     return (
-      <main className="fixed inset-0 z-50 h-dvh w-screen overflow-hidden bg-background">
+      <main className="fixed inset-0 z-50 flex h-dvh w-screen flex-col overflow-hidden bg-background">
         <h1 className="sr-only">{selectedDocument.title}</h1>
-        <iframe
-          src={viewerUrl}
-          title={`${selectedDocument.title} PDF 문서`}
-          className="h-full w-full border-0"
-        />
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <iframe
+            key={viewerUrl}
+            src={viewerUrl}
+            title={`${selectedDocument.title} PDF 문서`}
+            className="block h-full min-h-dvh w-full border-0"
+            scrolling="yes"
+          />
+        </div>
         <button
           type="button"
           onClick={() => setSelectedDocument(null)}
@@ -59,6 +83,17 @@ export default function WorkDocumentPage() {
         >
           <X className="size-5" aria-hidden="true" />
         </button>
+        {useIOSViewer ? (
+          <a
+            href={selectedDocument.pdf_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="fixed right-3 top-[max(0.75rem,env(safe-area-inset-top))] flex size-10 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label="PDF를 새 탭에서 직접 열기"
+          >
+            <ExternalLink className="size-5" aria-hidden="true" />
+          </a>
+        ) : null}
       </main>
     )
   }
@@ -131,7 +166,7 @@ export default function WorkDocumentPage() {
               <li key={document.id}>
                 <button
                   type="button"
-                  onClick={() => setSelectedDocument(document)}
+                  onClick={() => openDocument(document)}
                   className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left shadow-sm transition-transform hover:border-primary/40 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">

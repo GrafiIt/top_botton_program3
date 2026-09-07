@@ -25,11 +25,11 @@ async function fetchWorkDocuments(): Promise<WorkDocument[]> {
   return data ?? []
 }
 
-function isIOSDevice() {
+function isMobileDevice() {
   if (typeof navigator === "undefined") return false
 
   return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
   )
 }
@@ -38,7 +38,7 @@ export default function WorkDocumentPage() {
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [selectedDocument, setSelectedDocument] = useState<WorkDocument | null>(null)
-  const [useIOSViewer, setUseIOSViewer] = useState(false)
+  const [useMobileViewer, setUseMobileViewer] = useState(false)
   const { data: documents, error, isLoading } = useSWR("work-documents", fetchWorkDocuments)
 
   const filteredDocuments = useMemo(() => {
@@ -51,12 +51,12 @@ export default function WorkDocumentPage() {
   }, [documents, query])
 
   const openDocument = (document: WorkDocument) => {
-    setUseIOSViewer(isIOSDevice())
+    setUseMobileViewer(isMobileDevice())
     setSelectedDocument(document)
   }
 
   if (selectedDocument) {
-    const viewerUrl = useIOSViewer
+    const viewerUrl = useMobileViewer
       ? `https://docs.google.com/viewer?url=${encodeURIComponent(selectedDocument.pdf_url)}&embedded=true`
       : `${selectedDocument.pdf_url}#toolbar=0&navpanes=0&view=FitH`
 
@@ -83,7 +83,7 @@ export default function WorkDocumentPage() {
         >
           <X className="size-5" aria-hidden="true" />
         </button>
-        {useIOSViewer ? (
+        {useMobileViewer ? (
           <a
             href={selectedDocument.pdf_url}
             target="_blank"

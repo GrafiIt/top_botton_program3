@@ -3,11 +3,11 @@ import Link from "next/link"
 const menuItems = [
   { label: "Tool Box Meeting", href: "/toolbox" },
   { label: "교육 현황 관리", href: "#" },
-  { label: "MSDS", href: "#" },
+  { label: "MSDS", href: "/msds" },
   { label: "상/하차지 정보", href: "/loading-info" },
   { label: "벙커링 현황", href: "#" },
   { label: "선박유 도착지 정보", href: "#" },
-  { label: "비상대응 절차서", href: "#" },
+  { label: "비상대응 절차서", href: "/emergency" },
   { label: "휴게소 정보", href: "#" },
   { label: "작업 지침서", href: "/work-doc" },
   { label: "비상연락망", href: "#" },

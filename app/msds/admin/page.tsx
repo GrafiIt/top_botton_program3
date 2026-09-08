@@ -21,20 +21,20 @@ const ADMIN_ID = "human"
 const ADMIN_PASSWORD = "1024"
 const STORAGE_BUCKET = "work_documents"
 
-type WorkDocument = {
+type MsdsDocument = {
   id: string
   title: string
   pdf_url: string
   created_at: string
 }
 
-async function fetchWorkDocuments(): Promise<WorkDocument[]> {
+async function fetchMsdsDocuments(): Promise<MsdsDocument[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .schema("drivermgm")
     .from("human_gw_workdoc")
     .select("id, title, pdf_url, created_at")
-    .eq("doc_type", "work_doc")
+    .eq("doc_type", "msds")
     .order("created_at", { ascending: false })
 
   if (error) throw error
@@ -70,7 +70,7 @@ function formatCreatedAt(createdAt: string) {
   }).format(new Date(createdAt))
 }
 
-export default function WorkDocumentAdminPage() {
+export default function MsdsDocumentAdminPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [credentials, setCredentials] = useState({ id: "", password: "" })
@@ -87,7 +87,7 @@ export default function WorkDocumentAdminPage() {
     error: documentsError,
     isLoading: isLoadingDocuments,
     mutate,
-  } = useSWR<WorkDocument[]>(isAuthenticated ? "work-documents-admin" : null, fetchWorkDocuments)
+  } = useSWR<MsdsDocument[]>(isAuthenticated ? "msds-documents-admin" : null, fetchMsdsDocuments)
 
   const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -137,7 +137,7 @@ export default function WorkDocumentAdminPage() {
         .insert({
           title: title.trim(),
           pdf_url: urlData.publicUrl,
-          doc_type: "work_doc",
+          doc_type: "msds",
         })
         .select("id, title, pdf_url, created_at")
         .single()
@@ -151,7 +151,7 @@ export default function WorkDocumentAdminPage() {
         revalidate: false,
       })
       void mutate()
-      window.alert("작업 지침서가 등록되었습니다.")
+      window.alert("MSDS가 등록되었습니다.")
       setTitle("")
       setFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ""
@@ -162,7 +162,7 @@ export default function WorkDocumentAdminPage() {
     }
   }
 
-  const startEditing = (document: WorkDocument) => {
+  const startEditing = (document: MsdsDocument) => {
     setEditingId(document.id)
     setEditingTitle(document.title)
   }
@@ -211,7 +211,7 @@ export default function WorkDocumentAdminPage() {
     }
   }
 
-  const handleDelete = async (document: WorkDocument) => {
+  const handleDelete = async (document: MsdsDocument) => {
     const approved = window.confirm(`“${document.title}” 문서와 PDF 파일을 삭제하시겠습니까?`)
     if (!approved) return
 
@@ -266,7 +266,7 @@ export default function WorkDocumentAdminPage() {
             <h1 id="admin-login-title" className="text-balance text-2xl font-bold tracking-tight">
               관리자 인증
             </h1>
-            <p className="text-sm leading-6 text-muted-foreground">지침서를 관리하려면 관리자 정보를 입력해 주세요.</p>
+            <p className="text-sm leading-6 text-muted-foreground">MSDS를 관리하려면 관리자 정보를 입력해 주세요.</p>
           </div>
 
           <form onSubmit={handleLogin} className="mt-6 flex flex-col gap-4">
@@ -312,7 +312,7 @@ export default function WorkDocumentAdminPage() {
             </button>
             <button
               type="button"
-              onClick={() => router.push("/work-doc")}
+              onClick={() => router.push("/msds")}
               className="h-11 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               목록으로 돌아가기
@@ -328,27 +328,27 @@ export default function WorkDocumentAdminPage() {
       <header className="flex h-16 items-center gap-2 border-b border-border px-4">
         <button
           type="button"
-          onClick={() => router.push("/work-doc")}
+          onClick={() => router.push("/msds")}
           className="flex size-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="작업 지침서 목록으로 이동"
+          aria-label="MSDS 목록으로 이동"
         >
           <ArrowLeft className="size-5" aria-hidden="true" />
         </button>
-        <h1 className="text-lg font-bold tracking-tight">작업 지침서 관리</h1>
+        <h1 className="text-lg font-bold tracking-tight">MSDS 관리</h1>
       </header>
 
       <section className="flex flex-col gap-6 px-4 py-6" aria-labelledby="upload-form-title">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold text-primary">관리자 문서함</p>
           <h2 id="upload-form-title" className="text-balance text-2xl font-bold tracking-tight">새 PDF 등록</h2>
-          <p className="text-sm leading-6 text-muted-foreground">현장에서 확인할 작업 지침서를 업로드하세요.</p>
+          <p className="text-sm leading-6 text-muted-foreground">현장에서 확인할 MSDS를 업로드하세요.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <label className="flex flex-col gap-2" htmlFor="work-document-title">
+          <label className="flex flex-col gap-2" htmlFor="msds-document-title">
             <span className="text-sm font-semibold">문서 제목</span>
             <input
-              id="work-document-title"
+              id="msds-document-title"
               type="text"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
@@ -358,7 +358,7 @@ export default function WorkDocumentAdminPage() {
             />
           </label>
 
-          <label className="flex flex-col gap-2" htmlFor="work-document-file">
+          <label className="flex flex-col gap-2" htmlFor="msds-document-file">
             <span className="text-sm font-semibold">PDF 파일</span>
             <span className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-input bg-muted px-4 py-5 text-center hover:border-primary">
               {file ? <FileText className="size-7 text-primary" aria-hidden="true" /> : <Upload className="size-7 text-muted-foreground" aria-hidden="true" />}
@@ -367,7 +367,7 @@ export default function WorkDocumentAdminPage() {
             </span>
             <input
               ref={fileInputRef}
-              id="work-document-file"
+              id="msds-document-file"
               type="file"
               accept=".pdf,application/pdf"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
@@ -405,7 +405,7 @@ export default function WorkDocumentAdminPage() {
             </p>
           ) : documents.length === 0 ? (
             <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">
-              등록된 작업 지침서가 없습니다.
+              등록된 MSDS가 없습니다.
             </p>
           ) : (
             <ul className="flex flex-col gap-3">

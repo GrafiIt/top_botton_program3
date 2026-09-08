@@ -6,20 +6,20 @@ import { useMemo, useState } from "react"
 import useSWR from "swr"
 import { createClient } from "@/utils/supabase/client"
 
-type WorkDocument = {
+type MsdsDocument = {
   id: string
   title: string
   pdf_url: string
   created_at: string
 }
 
-async function fetchWorkDocuments(): Promise<WorkDocument[]> {
+async function fetchMsdsDocuments(): Promise<MsdsDocument[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .schema("drivermgm")
     .from("human_gw_workdoc")
     .select("id, title, pdf_url, created_at")
-    .eq("doc_type", "work_doc")
+    .eq("doc_type", "msds")
     .order("created_at", { ascending: false })
 
   if (error) throw error
@@ -35,12 +35,12 @@ function isMobileDevice() {
   )
 }
 
-export default function WorkDocumentPage() {
+export default function MsdsDocumentPage() {
   const router = useRouter()
   const [query, setQuery] = useState("")
-  const [selectedDocument, setSelectedDocument] = useState<WorkDocument | null>(null)
+  const [selectedDocument, setSelectedDocument] = useState<MsdsDocument | null>(null)
   const [useMobileViewer, setUseMobileViewer] = useState(false)
-  const { data: documents, error, isLoading } = useSWR("work-documents", fetchWorkDocuments)
+  const { data: documents, error, isLoading } = useSWR("msds-documents", fetchMsdsDocuments)
 
   const filteredDocuments = useMemo(() => {
     const normalizedQuery = query.trim().normalize("NFC").toLowerCase()
@@ -51,7 +51,7 @@ export default function WorkDocumentPage() {
     )
   }, [documents, query])
 
-  const openDocument = (document: WorkDocument) => {
+  const openDocument = (document: MsdsDocument) => {
     setUseMobileViewer(isMobileDevice())
     setSelectedDocument(document)
   }
@@ -111,40 +111,40 @@ export default function WorkDocumentPage() {
           >
             <ArrowLeft className="size-5" aria-hidden="true" />
           </button>
-          <h1 className="truncate text-lg font-bold tracking-tight">작업 지침서</h1>
+          <h1 className="truncate text-lg font-bold tracking-tight">MSDS</h1>
         </div>
 
         <button
           type="button"
-          onClick={() => router.push("/work-doc/admin")}
+          onClick={() => router.push("/msds/admin")}
           className="flex size-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="작업 지침서 관리자 페이지로 이동"
+          aria-label="MSDS 관리자 페이지로 이동"
         >
           <Settings className="size-5" aria-hidden="true" />
         </button>
       </header>
 
-      <section className="flex flex-col gap-5 px-4 py-6" aria-labelledby="work-doc-list-title">
+      <section className="flex flex-col gap-5 px-4 py-6" aria-labelledby="msds-list-title">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold text-primary">현장 문서함</p>
-          <h2 id="work-doc-list-title" className="text-balance text-2xl font-bold tracking-tight">
-            필요한 지침서를 찾아보세요
+          <h2 id="msds-list-title" className="text-balance text-2xl font-bold tracking-tight">
+            필요한 MSDS를 찾아보세요
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">문서를 누르면 전체 화면으로 열립니다.</p>
         </div>
 
-        <label className="relative block" htmlFor="work-document-search">
+        <label className="relative block" htmlFor="msdsument-search">
           <Search
             className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
           />
-          <span className="sr-only">지침서 제목 검색</span>
+          <span className="sr-only">MSDS 제목 검색</span>
           <input
-            id="work-document-search"
+            id="msdsument-search"
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="지침서 제목 검색"
+            placeholder="MSDS 제목 검색"
             className="h-12 w-full rounded-xl border border-input bg-card pl-12 pr-4 text-base outline-none transition-shadow placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </label>
@@ -159,7 +159,7 @@ export default function WorkDocumentPage() {
           </p>
         ) : filteredDocuments.length === 0 ? (
           <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">
-            {query ? "검색 결과가 없습니다." : "등록된 작업 지침서가 없습니다."}
+            {query ? "검색 결과가 없습니다." : "등록된 MSDS가 없습니다."}
           </p>
         ) : (
           <ul className="flex flex-col gap-3">

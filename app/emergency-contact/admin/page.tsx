@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, LoaderCircle, LockKeyhole, Phone, Plus, Trash2, UserRound } from "lucide-react"
+import { ArrowLeft, LoaderCircle, LockKeyhole, Pencil, Phone, Plus, Save, Trash2, UserRound, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import useSWR from "swr"
@@ -56,6 +56,7 @@ export default function EmergencyContactAdminPage() {
   const [loginError, setLoginError] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [form, setForm] = useState<ContactForm>(EMPTY_FORM)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const {
@@ -94,28 +95,70 @@ export default function EmergencyContactAdminPage() {
 
     try {
       const supabase = createClient()
-      const { data: insertedContact, error: insertError } = await supabase
-        .schema("drivermgm")
-        .from("human_gw_emercall")
-        .insert({
-          vehicle_number: vehicleNumber,
-          driver_name: driverName,
-          phone_number: phoneNumber,
-        })
-        .select("id, vehicle_number, driver_name, phone_number, created_at")
-        .single()
+      const contactValues = {
+        vehicle_number: vehicleNumber,
+        driver_name: driverName,
+        phone_number: phoneNumber,
+      }
 
-      if (insertError) throw insertError
+      if (editingId) {
+        const { data: updatedContact, error: updateError } = await supabase
+          .schema("drivermgm")
+          .from("human_gw_emercall")
+          .update(contactValues)
+          .eq("id", editingId)
+          .select("id, vehicle_number, driver_name, phone_number, created_at")
+          .single()
 
-      await mutate((currentContacts = []) => [insertedContact, ...currentContacts], { revalidate: false })
+        if (updateError) throw updateError
+
+        await mutate(
+          (currentContacts = []) =>
+            currentContacts.map((contact) => (contact.id === editingId ? updatedContact : contact)),
+          { revalidate: false },
+        )
+        setEditingId(null)
+        window.alert("연락처가 수정되었습니다.")
+      } else {
+        const { data: insertedContact, error: insertError } = await supabase
+          .schema("drivermgm")
+          .from("human_gw_emercall")
+          .insert(contactValues)
+          .select("id, vehicle_number, driver_name, phone_number, created_at")
+          .single()
+
+        if (insertError) throw insertError
+
+        await mutate((currentContacts = []) => [insertedContact, ...currentContacts], { revalidate: false })
+        window.alert("비상연락처가 등록되었습니다.")
+      }
+
       setForm(EMPTY_FORM)
       void mutate()
-      window.alert("비상연락처가 등록되었습니다.")
     } catch {
-      window.alert("등록하지 못했습니다. 테이블과 권한 설정을 확인해 주세요.")
+      window.alert(
+        editingId
+          ? "수정하지 못했습니다. 테이블의 수정 권한을 확인해 주세요."
+          : "등록하지 못했습니다. 테이블과 권한 설정을 확인해 주세요.",
+      )
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const handleEdit = (contact: EmergencyContact) => {
+    setEditingId(contact.id)
+    setForm({
+      vehicleNumber: contact.vehicle_number,
+      driverName: contact.driver_name,
+      phoneNumber: formatPhoneNumber(contact.phone_number),
+    })
+    document.getElementById("contact-form-title")?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setForm(EMPTY_FORM)
   }
 
   const handleDelete = async (contact: EmergencyContact) => {
@@ -220,8 +263,12 @@ export default function EmergencyContactAdminPage() {
       <section className="flex flex-col gap-6 px-4 py-6" aria-labelledby="contact-form-title">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold text-primary">관리자 연락처함</p>
-          <h2 id="contact-form-title" className="text-balance text-2xl font-bold tracking-tight">새 연락처 등록</h2>
-          <p className="text-sm leading-6 text-muted-foreground">운전자와 차량 정보를 정확하게 입력해 주세요.</p>
+          <h2 id="contact-form-title" className="text-balance text-2xl font-bold tracking-tight">
+            {editingId ? "연락처 수정" : "새 연락처 등록"}
+          </h2>
+          <p className="text-sm leading-6 text-muted-foreground">
+            {editingId ? "선택한 연락처 정보를 변경한 뒤 저장해 주세요." : "운전자와 차량 정보를 정확하게 입력해 주세요."}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -243,10 +290,24 @@ export default function EmergencyContactAdminPage() {
             </span>
           </label>
 
-          <button type="submit" disabled={isSaving} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-transform enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            {isSaving ? <LoaderCircle className="size-5 animate-spin" aria-hidden="true" /> : <Plus className="size-5" aria-hidden="true" />}
-            {isSaving ? "등록 중..." : "등록하기"}
-          </button>
+          <div className="flex gap-2">
+            {editingId ? (
+              <button type="button" onClick={handleCancelEdit} disabled={isSaving} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <X className="size-5" aria-hidden="true" />
+                취소
+              </button>
+            ) : null}
+            <button type="submit" disabled={isSaving} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-transform enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              {isSaving ? (
+                <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+              ) : editingId ? (
+                <Save className="size-5" aria-hidden="true" />
+              ) : (
+                <Plus className="size-5" aria-hidden="true" />
+              )}
+              {isSaving ? (editingId ? "저장 중..." : "등록 중...") : editingId ? "수정 저장" : "등록하기"}
+            </button>
+          </div>
         </form>
 
         <div className="flex flex-col gap-3" aria-labelledby="registered-contacts-title">
@@ -275,9 +336,14 @@ export default function EmergencyContactAdminPage() {
                       <p className="break-words font-semibold leading-6">{contact.driver_name} · {contact.vehicle_number}</p>
                       <p className="text-sm text-muted-foreground">{contact.phone_number}</p>
                     </div>
-                    <button type="button" onClick={() => void handleDelete(contact)} disabled={deletingId !== null} className="flex size-10 shrink-0 items-center justify-center rounded-xl text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${contact.driver_name} 연락처 삭제`}>
-                      {isDeleting ? <LoaderCircle className="size-5 animate-spin" aria-hidden="true" /> : <Trash2 className="size-5" aria-hidden="true" />}
-                    </button>
+                    <div className="flex shrink-0 gap-1">
+                      <button type="button" onClick={() => handleEdit(contact)} disabled={isSaving || deletingId !== null} className="flex size-10 items-center justify-center rounded-xl text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${contact.driver_name} 연락처 수정`}>
+                        <Pencil className="size-5" aria-hidden="true" />
+                      </button>
+                      <button type="button" onClick={() => void handleDelete(contact)} disabled={isSaving || deletingId !== null} className="flex size-10 items-center justify-center rounded-xl text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${contact.driver_name} 연락처 삭제`}>
+                        {isDeleting ? <LoaderCircle className="size-5 animate-spin" aria-hidden="true" /> : <Trash2 className="size-5" aria-hidden="true" />}
+                      </button>
+                    </div>
                   </li>
                 )
               })}

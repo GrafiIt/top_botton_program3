@@ -90,21 +90,21 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 md:py-12 lg:px-8">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-foreground">상하차지정보</h1>
-            <p className="text-muted-foreground mt-2">상하차지 최신 소식을 확인하세요</p>
+            <h1 className="text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">상하차지정보</h1>
+            <p className="mt-2 text-muted-foreground">상하차지 최신 소식을 확인하세요</p>
           </div>
-          <div className="flex flex-col gap-2 items-end">
-            <div className="flex gap-2">
-              <Link href="/notices/list">
-                <Button size="lg" variant="outline" className="gap-2">
+          <div className="flex w-full flex-col items-start gap-2 md:w-auto md:items-end">
+            <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap md:w-auto">
+              <Link href="/notices/list" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full gap-2 sm:w-auto">
                   <List className="w-5 h-5" />리스트 보기
                 </Button>
               </Link>
-              <Link href="/notices-admin/login">
-                <Button size="lg" className="gap-2">
+              <Link href="/notices-admin/login" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full gap-2 sm:w-auto">
                   <PlusCircle className="w-5 h-5" />새 공지 작성
                 </Button>
               </Link>

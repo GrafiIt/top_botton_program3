@@ -69,9 +69,8 @@ export default function RestAreaPage() {
 
       <section className="flex flex-col gap-5 px-4 py-6" aria-labelledby="rest-area-list-title">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-primary">운행 편의 정보</p>
           <h2 id="rest-area-list-title" className="text-balance text-2xl font-bold tracking-tight">
-            가까운 휴게소 찾기
+            휴게소 찾기
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">
             휴게소 이름을 검색하고 편의시설을 확인하세요.

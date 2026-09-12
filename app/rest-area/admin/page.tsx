@@ -9,13 +9,14 @@ import {
   Pencil,
   Plus,
   Save,
+  Search,
   ShowerHead,
   Trash2,
   UserRound,
   X,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState, type FormEvent } from "react"
+import { useMemo, useState, type FormEvent } from "react"
 import useSWR from "swr"
 import { createClient } from "@/utils/supabase/client"
 
@@ -66,12 +67,22 @@ export default function RestAreaAdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
   const {
     data: restAreas = [],
     error: restAreasError,
     isLoading: isLoadingRestAreas,
     mutate,
   } = useSWR<RestArea[]>(isAuthenticated ? "rest-areas-admin" : null, fetchRestAreas)
+
+  const filteredRestAreas = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().normalize("NFC").toLowerCase()
+    if (!normalizedTerm) return restAreas
+
+    return restAreas.filter((restArea) =>
+      restArea.name.normalize("NFC").toLowerCase().includes(normalizedTerm),
+    )
+  }, [restAreas, searchTerm])
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -338,18 +349,40 @@ export default function RestAreaAdminPage() {
               <p className="text-sm font-semibold text-primary">등록 현황</p>
               <h2 id="registered-rest-areas-title" className="text-xl font-bold tracking-tight">등록된 휴게소</h2>
             </div>
-            <span className="text-sm text-muted-foreground">총 {restAreas.length}곳</span>
+            <span className="text-sm text-muted-foreground" aria-live="polite">
+              총 {filteredRestAreas.length}곳
+            </span>
           </div>
+
+          <label className="relative block" htmlFor="admin-rest-area-search">
+            <span className="sr-only">등록된 휴게소명 검색</span>
+            <Search
+              className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <input
+              id="admin-rest-area-search"
+              type="search"
+              inputMode="search"
+              autoComplete="off"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="휴게소명 검색"
+              className="h-12 w-full rounded-xl border border-input bg-background pl-12 pr-4 text-base outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+          </label>
 
           {isLoadingRestAreas ? (
             <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground" role="status">휴게소를 불러오는 중입니다.</p>
           ) : restAreasError ? (
             <p className="rounded-xl bg-muted p-6 text-center text-sm text-destructive" role="alert">휴게소 목록을 불러오지 못했습니다.</p>
-          ) : restAreas.length === 0 ? (
-            <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">등록된 휴게소가 없습니다.</p>
+          ) : filteredRestAreas.length === 0 ? (
+            <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">
+              {searchTerm ? "검색 결과가 없습니다." : "등록된 휴게소가 없습니다."}
+            </p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {restAreas.map((restArea) => {
+              {filteredRestAreas.map((restArea) => {
                 const isDeleting = deletingId === restArea.id
                 return (
                   <li key={restArea.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">

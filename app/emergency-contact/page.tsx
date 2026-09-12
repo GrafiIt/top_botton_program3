@@ -73,7 +73,6 @@ export default function EmergencyContactPage() {
 
       <section className="flex flex-col gap-5 px-4 py-6" aria-labelledby="contact-list-title">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-primary">긴급 연락처</p>
           <h2 id="contact-list-title" className="text-balance text-2xl font-bold tracking-tight">
             운전자 비상연락망
           </h2>

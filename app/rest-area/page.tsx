@@ -122,19 +122,27 @@ export default function RestAreaPage() {
                 </div>
 
                 <dl className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4">
-                  <div className="flex items-center justify-between gap-2 rounded-xl bg-muted px-3 py-3">
-                    <dt className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <div
+                    className={`flex items-center justify-between gap-2 rounded-xl px-3 py-3 ${
+                      restArea.has_shower ? "bg-sky-100 text-sky-900" : "bg-pink-100 text-pink-900"
+                    }`}
+                  >
+                    <dt className="flex items-center gap-2 text-sm font-semibold">
                       <ShowerHead className="size-4" aria-hidden="true" />
                       샤워실
                     </dt>
-                    <dd className="font-mono text-sm font-bold text-foreground">{restArea.has_shower ? "O" : "X"}</dd>
+                    <dd className="font-mono text-sm font-bold">{restArea.has_shower ? "O" : "X"}</dd>
                   </div>
-                  <div className="flex items-center justify-between gap-2 rounded-xl bg-muted px-3 py-3">
-                    <dt className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <div
+                    className={`flex items-center justify-between gap-2 rounded-xl px-3 py-3 ${
+                      restArea.has_sleep ? "bg-sky-100 text-sky-900" : "bg-pink-100 text-pink-900"
+                    }`}
+                  >
+                    <dt className="flex items-center gap-2 text-sm font-semibold">
                       <Waves className="size-4" aria-hidden="true" />
                       수면실
                     </dt>
-                    <dd className="font-mono text-sm font-bold text-foreground">{restArea.has_sleep ? "O" : "X"}</dd>
+                    <dd className="font-mono text-sm font-bold">{restArea.has_sleep ? "O" : "X"}</dd>
                   </div>
                 </dl>
               </li>

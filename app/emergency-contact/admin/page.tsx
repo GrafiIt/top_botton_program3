@@ -56,6 +56,7 @@ export default function EmergencyContactAdminPage() {
   const [loginError, setLoginError] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [form, setForm] = useState<ContactForm>(EMPTY_FORM)
+  const [isSpecialNumber, setIsSpecialNumber] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -84,9 +85,14 @@ export default function EmergencyContactAdminPage() {
 
     const vehicleNumber = form.vehicleNumber.trim().normalize("NFC")
     const driverName = form.driverName.trim().normalize("NFC")
-    const phoneNumber = formatPhoneNumber(form.phoneNumber)
+    const phoneNumber = isSpecialNumber
+      ? form.phoneNumber.trim().normalize("NFC")
+      : formatPhoneNumber(form.phoneNumber)
+    const isInvalidPhoneNumber = isSpecialNumber
+      ? !phoneNumber.trim()
+      : phoneNumber.replace(/\D/g, "").length < 10
 
-    if (!vehicleNumber || !driverName || phoneNumber.replace(/\D/g, "").length < 10) {
+    if (!vehicleNumber || !driverName || isInvalidPhoneNumber) {
       window.alert("차량번호, 성명과 올바른 연락처를 입력해 주세요.")
       return
     }
@@ -134,6 +140,7 @@ export default function EmergencyContactAdminPage() {
       }
 
       setForm(EMPTY_FORM)
+      setIsSpecialNumber(false)
       void mutate()
     } catch {
       window.alert(
@@ -147,17 +154,23 @@ export default function EmergencyContactAdminPage() {
   }
 
   const handleEdit = (contact: EmergencyContact) => {
+    const digitCount = contact.phone_number.replace(/\D/g, "").length
+    const hasSpecialCharacters = /[^\d\s()+-]/.test(contact.phone_number)
+    const shouldUseSpecialNumber = digitCount < 10 || hasSpecialCharacters
+
     setEditingId(contact.id)
+    setIsSpecialNumber(shouldUseSpecialNumber)
     setForm({
       vehicleNumber: contact.vehicle_number,
       driverName: contact.driver_name,
-      phoneNumber: formatPhoneNumber(contact.phone_number),
+      phoneNumber: shouldUseSpecialNumber ? contact.phone_number : formatPhoneNumber(contact.phone_number),
     })
     document.getElementById("contact-form-title")?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
   const handleCancelEdit = () => {
     setEditingId(null)
+    setIsSpecialNumber(false)
     setForm(EMPTY_FORM)
   }
 
@@ -282,13 +295,47 @@ export default function EmergencyContactAdminPage() {
             <input id="driver-name" type="text" value={form.driverName} onChange={(event) => setForm((current) => ({ ...current, driverName: event.target.value }))} placeholder="운전자 성명" className="h-12 rounded-xl border border-input bg-background px-4 text-base outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20" required />
           </label>
 
-          <label className="flex flex-col gap-2" htmlFor="phone-number">
-            <span className="text-sm font-semibold">연락처</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-semibold" htmlFor="phone-number">연락처</label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-muted-foreground" htmlFor="special-number">
+                <input
+                  id="special-number"
+                  type="checkbox"
+                  checked={isSpecialNumber}
+                  onChange={(event) => {
+                    const isChecked = event.target.checked
+                    setIsSpecialNumber(isChecked)
+                    if (!isChecked) {
+                      setForm((current) => ({ ...current, phoneNumber: formatPhoneNumber(current.phoneNumber) }))
+                    }
+                  }}
+                  className="size-4 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                특수번호
+              </label>
+            </div>
             <span className="relative block">
               <Phone className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-              <input id="phone-number" type="tel" inputMode="numeric" autoComplete="tel" value={form.phoneNumber} onChange={(event) => setForm((current) => ({ ...current, phoneNumber: formatPhoneNumber(event.target.value) }))} placeholder="010-1234-5678" maxLength={13} className="h-12 w-full rounded-xl border border-input bg-background pl-12 pr-4 text-base outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20" required />
+              <input
+                id="phone-number"
+                type="tel"
+                inputMode={isSpecialNumber ? "text" : "numeric"}
+                autoComplete="tel"
+                value={form.phoneNumber}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    phoneNumber: isSpecialNumber ? event.target.value : formatPhoneNumber(event.target.value),
+                  }))
+                }
+                placeholder={isSpecialNumber ? "예: 1577-8278 또는 119" : "010-1234-5678"}
+                maxLength={isSpecialNumber ? undefined : 13}
+                className="h-12 w-full rounded-xl border border-input bg-background pl-12 pr-4 text-base outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                required
+              />
             </span>
-          </label>
+          </div>
 
           <div className="flex gap-2">
             {editingId ? (
@@ -320,7 +367,7 @@ export default function EmergencyContactAdminPage() {
           </div>
 
           {isLoadingContacts ? (
-            <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground" role="status">연락처를 불러오는 중입니다.</p>
+            <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground" role="status">연��처를 불러오는 중입니다.</p>
           ) : contactsError ? (
             <p className="rounded-xl bg-muted p-6 text-center text-sm text-destructive" role="alert">연락처 목록을 불러오지 못했습니다.</p>
           ) : contacts.length === 0 ? (

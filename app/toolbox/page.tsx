@@ -222,9 +222,10 @@ export default function ToolboxPage() {
           <ul className="flex flex-col gap-5">
             {activeLines.map((line, index) => (
               <li key={`${line}-${index}`} className="flex min-h-14 items-start gap-4 rounded-xl bg-slate-50 px-4 py-4">
-                <span className="-mt-1 shrink-0 font-mono text-4xl font-light leading-none text-blue-600" aria-hidden="true">
-                  {"["}
-                </span>
+                <div
+                  className="my-0.5 w-2.5 shrink-0 self-stretch rounded-l-md border-y-2 border-l-2 border-blue-600"
+                  aria-hidden="true"
+                />
                 <p className="pt-0.5 text-sm font-medium leading-6 text-pretty">{line}</p>
               </li>
             ))}

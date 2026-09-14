@@ -127,22 +127,34 @@ export default function RestAreaPage() {
                       restArea.has_shower ? "bg-sky-100 text-sky-900" : "bg-pink-100 text-pink-900"
                     }`}
                   >
-                    <dt className="flex items-center gap-2 text-sm font-semibold">
-                      <ShowerHead className="size-4" aria-hidden="true" />
+                    <dt className="flex items-center gap-2 text-sm font-bold">
+                      <ShowerHead className="size-5" aria-hidden="true" />
                       샤워실
                     </dt>
-                    <dd className="font-mono text-sm font-bold">{restArea.has_shower ? "O" : "X"}</dd>
+                    <dd
+                      className={`flex size-12 shrink-0 items-center justify-center rounded-xl bg-background font-mono text-2xl font-black shadow-sm ${
+                        restArea.has_shower ? "text-sky-600" : "text-pink-600"
+                      }`}
+                    >
+                      {restArea.has_shower ? "O" : "X"}
+                    </dd>
                   </div>
                   <div
                     className={`flex items-center justify-between gap-2 rounded-xl px-3 py-3 ${
                       restArea.has_sleep ? "bg-sky-100 text-sky-900" : "bg-pink-100 text-pink-900"
                     }`}
                   >
-                    <dt className="flex items-center gap-2 text-sm font-semibold">
-                      <Waves className="size-4" aria-hidden="true" />
+                    <dt className="flex items-center gap-2 text-sm font-bold">
+                      <Waves className="size-5" aria-hidden="true" />
                       수면실
                     </dt>
-                    <dd className="font-mono text-sm font-bold">{restArea.has_sleep ? "O" : "X"}</dd>
+                    <dd
+                      className={`flex size-12 shrink-0 items-center justify-center rounded-xl bg-background font-mono text-2xl font-black shadow-sm ${
+                        restArea.has_sleep ? "text-sky-600" : "text-pink-600"
+                      }`}
+                    >
+                      {restArea.has_sleep ? "O" : "X"}
+                    </dd>
                   </div>
                 </dl>
               </li>

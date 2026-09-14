@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, ChevronRight, ChevronLeft } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { ArrowLeft, ChevronLeft, ChevronRight, Search, X } from "lucide-react"
 
 const PAGE_SIZE = 20
 const PAGE_WINDOW = 4
@@ -16,6 +17,7 @@ interface Notice {
 
 export default function NoticesListPage() {
   const [notices, setNotices] = useState<Notice[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -45,8 +47,17 @@ export default function NoticesListPage() {
     fetchNotices()
   }, [])
 
-  const totalPages = Math.ceil(notices.length / PAGE_SIZE)
-  const pagedNotices = notices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const filteredNotices = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().normalize("NFC").toLowerCase()
+    if (!normalizedQuery) return notices
+
+    return notices.filter((notice) =>
+      notice.title.normalize("NFC").toLowerCase().includes(normalizedQuery)
+    )
+  }, [notices, searchQuery])
+
+  const totalPages = Math.ceil(filteredNotices.length / PAGE_SIZE)
+  const pagedNotices = filteredNotices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   // 4개 페이지 번호 윈도우 계산
   const windowStart = Math.max(1, Math.min(currentPage - Math.floor(PAGE_WINDOW / 2), totalPages - PAGE_WINDOW + 1))
@@ -68,6 +79,11 @@ export default function NoticesListPage() {
     }
   }
 
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-12 sm:px-6">
@@ -83,13 +99,40 @@ export default function NoticesListPage() {
           </div>
         </div>
 
+        <div className="relative mb-6">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            type="text"
+            placeholder="상하차지 명으로 검색..."
+            value={searchQuery}
+            onChange={(event) => handleSearchChange(event.target.value)}
+            className="h-12 pl-10 pr-10 text-base"
+            aria-label="상하차지 명으로 검색"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => handleSearchChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="검색어 지우기"
+            >
+              <X className="size-5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">로딩 중...</p>
           </div>
-        ) : notices.length === 0 ? (
+        ) : filteredNotices.length === 0 ? (
           <div className="text-center py-12 border rounded-lg">
-            <p className="text-muted-foreground">아직 등록된 공지사항이 없습니다.</p>
+            <p className="text-muted-foreground">
+              {searchQuery.trim() ? "검색 결과가 없습니다." : "아직 등록된 공지사항이 없습니다."}
+            </p>
           </div>
         ) : (
           <ul className="divide-y divide-border border rounded-lg overflow-hidden">
@@ -160,7 +203,7 @@ export default function NoticesListPage() {
         )}
 
         <p className="text-center text-sm text-muted-foreground mt-4">
-          총 {notices.length}개의 상하차지 ({currentPage} / {totalPages || 1} 페이지)
+          총 {filteredNotices.length}개의 상하차지 ({currentPage} / {totalPages || 1} 페이지)
         </p>
       </div>
     </div>

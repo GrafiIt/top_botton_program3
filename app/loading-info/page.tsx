@@ -50,9 +50,12 @@ export default function HomePage() {
         .schema("all_use_programs")
         .from("top_botton_program")
         .select("*")
-        .order("created_at", { ascending: false })
+        .order("title", { ascending: true })
       if (!error && Array.isArray(data)) {
-        setNotices(data)
+        const sorted = [...data].sort((a, b) =>
+          a.title.localeCompare(b.title, ["ko", "en"], { numeric: true, sensitivity: "base" })
+        )
+        setNotices(sorted)
       } else {
         setNotices([])
       }

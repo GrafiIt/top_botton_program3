@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, Search, Settings } from "lucide-react"
+import { ArrowLeft, Phone, Search, Settings } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
@@ -95,11 +95,14 @@ export default function EmergencyContactPage() {
         </label>
 
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <div className="grid grid-cols-[2.75rem_1.15fr_0.8fr_1.25fr] items-center bg-primary px-2 py-3 text-center text-sm font-semibold text-primary-foreground">
+          <div className="grid grid-cols-[2.25rem_0.85fr_0.8fr_1.6fr] items-center bg-primary px-2 py-3 text-center text-sm font-semibold text-primary-foreground">
             <span>순번</span>
             <span>차량번호</span>
             <span>성명</span>
-            <span>연락처</span>
+            <span className="flex items-center justify-center gap-1">
+              <Phone className="size-4" aria-hidden="true" />
+              연락처(터치)
+            </span>
           </div>
 
           {isLoading ? (
@@ -115,17 +118,18 @@ export default function EmergencyContactPage() {
               {filteredContacts.map((contact, index) => (
                 <li
                   key={contact.id}
-                  className="grid min-h-14 grid-cols-[2.75rem_1.15fr_0.8fr_1.25fr] items-center border-t border-border px-2 py-2 text-center text-sm first:border-t-0"
+                  className="grid min-h-14 grid-cols-[2.25rem_0.85fr_0.8fr_1.6fr] items-center border-t border-border px-2 py-2 text-center text-sm first:border-t-0"
                 >
                   <span className="font-mono text-sm text-muted-foreground">{index + 1}</span>
                   <span className="break-words font-semibold">{contact.vehicle_number}</span>
                   <span className="break-words">{contact.driver_name}</span>
                   <a
                     href={`tel:${contact.phone_number.replace(/[^0-9+]/g, "")}`}
-                    className="break-all text-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex items-center justify-center gap-1 rounded-md bg-blue-50 px-1.5 py-1.5 text-sm font-bold text-blue-600 underline decoration-blue-300 underline-offset-2 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={`${contact.driver_name}에게 전화하기: ${contact.phone_number}`}
                   >
-                    {contact.phone_number}
+                    <Phone className="size-3.5 shrink-0" aria-hidden="true" />
+                    <span className="break-all">{contact.phone_number}</span>
                   </a>
                 </li>
               ))}

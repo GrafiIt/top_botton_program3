@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   Save,
+  Search,
   Trash2,
   Upload,
   UserRound,
@@ -122,6 +123,7 @@ export default function MsdsDocumentAdminPage() {
   const [editingTitle, setEditingTitle] = useState("")
   const [editingDocumentBrandId, setEditingDocumentBrandId] = useState("")
   const [editingUploadedAt, setEditingUploadedAt] = useState("")
+  const [documentQuery, setDocumentQuery] = useState("")
   const [processingId, setProcessingId] = useState<string | null>(null)
   const {
     data = { brands: [], documents: [] },
@@ -142,6 +144,15 @@ export default function MsdsDocumentAdminPage() {
     () => new Map(data.brands.map((brand) => [brand.id, brand.name])),
     [data.brands],
   )
+
+  const filteredDocuments = useMemo(() => {
+    const normalizedQuery = documentQuery.trim().normalize("NFC").toLowerCase()
+    if (!normalizedQuery) return data.documents
+
+    return data.documents.filter((document) =>
+      document.title.normalize("NFC").toLowerCase().includes(normalizedQuery),
+    )
+  }, [data.documents, documentQuery])
 
   const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -757,18 +768,36 @@ export default function MsdsDocumentAdminPage() {
               <p className="text-sm font-semibold text-primary">등록 현황</p>
               <h2 id="registered-documents-title" className="text-xl font-bold tracking-tight">등록된 문서</h2>
             </div>
-            <span className="text-sm text-muted-foreground">총 {data.documents.length}건</span>
+            <span className="text-sm text-muted-foreground">총 {filteredDocuments.length}건</span>
           </div>
+
+          <label className="relative block" htmlFor="admin-msds-document-search">
+            <Search
+              className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <span className="sr-only">문서 제목 검색</span>
+            <input
+              id="admin-msds-document-search"
+              type="search"
+              value={documentQuery}
+              onChange={(event) => setDocumentQuery(event.target.value)}
+              placeholder="문서 제목 검색"
+              className="h-12 w-full rounded-xl border border-input bg-card pl-12 pr-4 text-base outline-none transition-shadow placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+          </label>
 
           {isLoadingLibrary ? (
             <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground" role="status">문서를 불러오는 중입니다.</p>
           ) : libraryError ? (
             <p className="rounded-xl bg-muted p-6 text-center text-sm text-destructive" role="alert">문서 목록을 불러오지 못했습니다.</p>
-          ) : data.documents.length === 0 ? (
-            <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">등록된 MSDS가 없습니다.</p>
+          ) : filteredDocuments.length === 0 ? (
+            <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">
+              {documentQuery.trim() ? "검색 결과가 없습니다." : "등록된 MSDS가 없습니다."}
+            </p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {data.documents.map((document) => {
+              {filteredDocuments.map((document) => {
                 const isEditing = editingId === document.id
                 const isUpdating = processingId === `document:update:${document.id}`
                 const isDeleting = processingId === `document:delete:${document.id}`

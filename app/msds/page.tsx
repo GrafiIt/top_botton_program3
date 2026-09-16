@@ -9,6 +9,7 @@ import { createClient } from "@/utils/supabase/client"
 type MsdsBrand = {
   id: string
   name: string
+  sort_order?: number
 }
 
 type MsdsDocument = {
@@ -27,7 +28,11 @@ type MsdsLibrary = {
 async function fetchMsdsLibrary(): Promise<MsdsLibrary> {
   const supabase = createClient()
   const [brandsResult, documentsResult] = await Promise.all([
-    supabase.schema("drivermgm").from("human_gw_msds_brands").select("id, name").order("name"),
+    supabase
+      .schema("drivermgm")
+      .from("human_gw_msds_brands")
+      .select("id, name, sort_order")
+      .order("sort_order", { ascending: true }),
     supabase
       .schema("drivermgm")
       .from("human_gw_workdoc")
@@ -72,6 +77,16 @@ export default function MsdsDocumentPage() {
       counts.set(document.brand_id, (counts.get(document.brand_id) ?? 0) + 1)
     }
     return counts
+  }, [data?.documents])
+
+  const latestUpdateByBrand = useMemo(() => {
+    const latestUpdates = new Map<string, string>()
+    for (const document of data?.documents ?? []) {
+      if (!latestUpdates.has(document.brand_id)) {
+        latestUpdates.set(document.brand_id, document.uploaded_at)
+      }
+    }
+    return latestUpdates
   }, [data?.documents])
 
   const selectedBrand = data?.brands.find((brand) => brand.id === selectedBrandId) ?? null
@@ -279,6 +294,9 @@ export default function MsdsDocumentPage() {
                     <span className="block truncate text-base font-semibold">{brand.name}</span>
                     <span className="mt-1 block text-sm text-muted-foreground">
                       MSDS {documentCountByBrand.get(brand.id) ?? 0}건
+                      {latestUpdateByBrand.get(brand.id)
+                        ? ` · 최근 업데이트: ${latestUpdateByBrand.get(brand.id)}`
+                        : " · 등록 문서 없음"}
                     </span>
                   </span>
                   <span className="font-mono text-lg text-muted-foreground" aria-hidden="true">

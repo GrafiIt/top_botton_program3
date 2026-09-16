@@ -1,7 +1,9 @@
 "use client"
 
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
   FileText,
   Folder,
   LoaderCircle,
@@ -40,6 +42,7 @@ function getToday() {
 type MsdsBrand = {
   id: string
   name: string
+  sort_order?: number
 }
 
 type MsdsDocument = {
@@ -58,7 +61,11 @@ type MsdsAdminLibrary = {
 async function fetchMsdsAdminLibrary(): Promise<MsdsAdminLibrary> {
   const supabase = createClient()
   const [brandsResult, documentsResult] = await Promise.all([
-    supabase.schema("drivermgm").from("human_gw_msds_brands").select("id, name").order("name"),
+    supabase
+      .schema("drivermgm")
+      .from("human_gw_msds_brands")
+      .select("id, name, sort_order")
+      .order("sort_order", { ascending: true }),
     supabase
       .schema("drivermgm")
       .from("human_gw_workdoc")
@@ -169,19 +176,21 @@ export default function MsdsDocumentAdminPage() {
 
     setProcessingId("brand:create")
     try {
+      const nextSortOrder =
+        data.brands.reduce((maximum, brand) => Math.max(maximum, brand.sort_order ?? 0), 0) + 1
       const supabase = createClient()
       const { data: createdBrand, error } = await supabase
         .schema("drivermgm")
         .from("human_gw_msds_brands")
-        .insert({ name: nextName })
-        .select("id, name")
+        .insert({ name: nextName, sort_order: nextSortOrder })
+        .select("id, name, sort_order")
         .single()
 
       if (error) throw error
       await mutate(
         (current = { brands: [], documents: [] }) => ({
           ...current,
-          brands: [...current.brands, createdBrand].sort((a, b) => a.name.localeCompare(b.name, "ko")),
+          brands: [...current.brands, createdBrand],
         }),
         { revalidate: false },
       )
@@ -232,9 +241,9 @@ export default function MsdsDocumentAdminPage() {
       await mutate(
         (current = { brands: [], documents: [] }) => ({
           ...current,
-          brands: current.brands
-            .map((brand) => (brand.id === currentBrandId ? { ...brand, name: nextName } : brand))
-            .sort((a, b) => a.name.localeCompare(b.name, "ko")),
+          brands: current.brands.map((brand) =>
+            brand.id === currentBrandId ? { ...brand, name: nextName } : brand,
+          ),
         }),
         { revalidate: false },
       )
@@ -242,6 +251,60 @@ export default function MsdsDocumentAdminPage() {
       window.alert("브랜드명이 수정되었습니다.")
     } catch {
       window.alert("브랜드명을 수정하지 못했습니다. 테이블 권한을 확인해 주세요.")
+      void mutate()
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const handleBrandMove = async (brandIndex: number, direction: -1 | 1) => {
+    const targetIndex = brandIndex + direction
+    const currentBrand = data.brands[brandIndex]
+    const targetBrand = data.brands[targetIndex]
+
+    if (!currentBrand || !targetBrand) return
+
+    const currentSortOrder = currentBrand.sort_order ?? brandIndex + 1
+    const targetSortOrder = targetBrand.sort_order ?? targetIndex + 1
+
+    setProcessingId(`brand:move:${currentBrand.id}`)
+    try {
+      const supabase = createClient()
+      const [currentUpdate, targetUpdate] = await Promise.all([
+        supabase
+          .schema("drivermgm")
+          .from("human_gw_msds_brands")
+          .update({ sort_order: targetSortOrder })
+          .eq("id", currentBrand.id)
+          .select("id"),
+        supabase
+          .schema("drivermgm")
+          .from("human_gw_msds_brands")
+          .update({ sort_order: currentSortOrder })
+          .eq("id", targetBrand.id)
+          .select("id"),
+      ])
+
+      if (currentUpdate.error) throw currentUpdate.error
+      if (targetUpdate.error) throw targetUpdate.error
+      if (!currentUpdate.data?.length || !targetUpdate.data?.length) {
+        throw new Error("순서를 변경할 브랜드를 찾지 못했습니다.")
+      }
+
+      await mutate(
+        (current = { brands: [], documents: [] }) => {
+          const reorderedBrands = [...current.brands]
+          const movedBrand = { ...reorderedBrands[brandIndex], sort_order: targetSortOrder }
+          const replacedBrand = { ...reorderedBrands[targetIndex], sort_order: currentSortOrder }
+          reorderedBrands[brandIndex] = replacedBrand
+          reorderedBrands[targetIndex] = movedBrand
+
+          return { ...current, brands: reorderedBrands }
+        },
+        { revalidate: false },
+      )
+    } catch {
+      window.alert("브랜드 순서를 변경하지 못했습니다. 목록을 새로 확인합니다.")
       void mutate()
     } finally {
       setProcessingId(null)
@@ -472,7 +535,7 @@ export default function MsdsDocumentAdminPage() {
       if (editingId === document.id) cancelEditing()
       window.alert("문서와 PDF 파일이 삭제되었습니다.")
     } catch {
-      window.alert("삭제를 완료하지 못했습니다. 저장소와 테이블의 삭제 권한을 확인해 주세요.")
+      window.alert("삭제를 완료하지 못��습니다. 저장소와 테이블의 삭제 권한을 확인해 주세요.")
       void mutate()
     } finally {
       setProcessingId(null)
@@ -574,10 +637,11 @@ export default function MsdsDocumentAdminPage() {
             <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">등록된 브랜드가 없습니다.</p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {data.brands.map((brand) => {
+              {data.brands.map((brand, brandIndex) => {
                 const isEditingBrand = editingBrandId === brand.id
                 const isUpdatingBrand = processingId === `brand:update:${brand.id}`
                 const isDeletingBrand = processingId === `brand:delete:${brand.id}`
+                const isMovingBrand = processingId === `brand:move:${brand.id}`
 
                 return (
                   <li key={brand.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -604,8 +668,28 @@ export default function MsdsDocumentAdminPage() {
                           </span>
                         </div>
                         <div className="flex gap-2">
-                          <button type="button" onClick={() => startBrandEditing(brand)} disabled={isBusy} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-muted px-3 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Pencil className="size-4" aria-hidden="true" /> 이름 수정</button>
-                          <button type="button" onClick={() => void handleBrandDelete(brand)} disabled={isBusy} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-destructive bg-background px-3 text-sm font-semibold text-destructive disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                          <button
+                            type="button"
+                            onClick={() => void handleBrandMove(brandIndex, -1)}
+                            disabled={isBusy || brandIndex === 0}
+                            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label={`${brand.name} 브랜드를 위로 이동`}
+                            title="위로 이동"
+                          >
+                            {isMovingBrand ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <ArrowUp className="size-4" aria-hidden="true" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleBrandMove(brandIndex, 1)}
+                            disabled={isBusy || brandIndex === data.brands.length - 1}
+                            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label={`${brand.name} 브랜드를 아래로 이동`}
+                            title="아래로 이동"
+                          >
+                            {isMovingBrand ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <ArrowDown className="size-4" aria-hidden="true" />}
+                          </button>
+                          <button type="button" onClick={() => startBrandEditing(brand)} disabled={isBusy} className="flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-muted px-2 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Pencil className="size-4" aria-hidden="true" /> 이름 수정</button>
+                          <button type="button" onClick={() => void handleBrandDelete(brand)} disabled={isBusy} className="flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-destructive bg-background px-2 text-sm font-semibold text-destructive disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                             {isDeletingBrand ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />} {isDeletingBrand ? "삭제 중" : "전체 삭제"}
                           </button>
                         </div>

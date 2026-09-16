@@ -1,29 +1,52 @@
 "use client"
 
-import { ArrowLeft, ExternalLink, FileText, Search, Settings, X } from "lucide-react"
+import { ArrowLeft, ExternalLink, FileText, Folder, Search, Settings, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
 import { createClient } from "@/utils/supabase/client"
 
+type MsdsBrand = {
+  id: string
+  name: string
+}
+
 type MsdsDocument = {
   id: string
   title: string
   pdf_url: string
-  created_at: string
+  brand_id: string
+  uploaded_at: string
 }
 
-async function fetchMsdsDocuments(): Promise<MsdsDocument[]> {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .schema("drivermgm")
-    .from("human_gw_workdoc")
-    .select("id, title, pdf_url, created_at")
-    .eq("doc_type", "msds")
-    .order("created_at", { ascending: false })
+type MsdsLibrary = {
+  brands: MsdsBrand[]
+  documents: MsdsDocument[]
+}
 
-  if (error) throw error
-  return data ?? []
+async function fetchMsdsLibrary(): Promise<MsdsLibrary> {
+  const supabase = createClient()
+  const [brandsResult, documentsResult] = await Promise.all([
+    supabase.schema("drivermgm").from("human_gw_msds_brands").select("id, name").order("name"),
+    supabase
+      .schema("drivermgm")
+      .from("human_gw_workdoc")
+      .select("id, title, pdf_url, brand_id, uploaded_at")
+      .eq("doc_type", "msds")
+      .order("uploaded_at", { ascending: false }),
+  ])
+
+  if (brandsResult.error) throw brandsResult.error
+  if (documentsResult.error) throw documentsResult.error
+
+  return {
+    brands: brandsResult.data ?? [],
+    documents: documentsResult.data ?? [],
+  }
+}
+
+function normalizeSearch(value: string) {
+  return value.trim().normalize("NFC").toLocaleLowerCase("ko-KR")
 }
 
 function isMobileDevice() {
@@ -38,18 +61,54 @@ function isMobileDevice() {
 export default function MsdsDocumentPage() {
   const router = useRouter()
   const [query, setQuery] = useState("")
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [selectedDocument, setSelectedDocument] = useState<MsdsDocument | null>(null)
   const [useMobileViewer, setUseMobileViewer] = useState(false)
-  const { data: documents, error, isLoading } = useSWR("msds-documents", fetchMsdsDocuments)
+  const { data, error, isLoading } = useSWR("msds-library", fetchMsdsLibrary)
+
+  const documentCountByBrand = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const document of data?.documents ?? []) {
+      counts.set(document.brand_id, (counts.get(document.brand_id) ?? 0) + 1)
+    }
+    return counts
+  }, [data?.documents])
+
+  const selectedBrand = data?.brands.find((brand) => brand.id === selectedBrandId) ?? null
+
+  const filteredBrands = useMemo(() => {
+    const normalizedQuery = normalizeSearch(query)
+    if (!normalizedQuery) return data?.brands ?? []
+
+    return (data?.brands ?? []).filter((brand) => {
+      if (normalizeSearch(brand.name).includes(normalizedQuery)) return true
+
+      return (data?.documents ?? []).some(
+        (document) =>
+          document.brand_id === brand.id && normalizeSearch(document.title).includes(normalizedQuery),
+      )
+    })
+  }, [data, query])
 
   const filteredDocuments = useMemo(() => {
-    const normalizedQuery = query.trim().normalize("NFC").toLowerCase()
-    if (!normalizedQuery) return documents ?? []
-
-    return (documents ?? []).filter((document) =>
-      document.title.normalize("NFC").toLowerCase().includes(normalizedQuery),
+    const normalizedQuery = normalizeSearch(query)
+    const brandDocuments = (data?.documents ?? []).filter(
+      (document) => document.brand_id === selectedBrandId,
     )
-  }, [documents, query])
+
+    if (!normalizedQuery) return brandDocuments
+    return brandDocuments.filter((document) => normalizeSearch(document.title).includes(normalizedQuery))
+  }, [data?.documents, query, selectedBrandId])
+
+  const openBrand = (brandId: string) => {
+    setSelectedBrandId(brandId)
+    setQuery("")
+  }
+
+  const closeBrand = () => {
+    setSelectedBrandId(null)
+    setQuery("")
+  }
 
   const openDocument = (document: MsdsDocument) => {
     setUseMobileViewer(isMobileDevice())
@@ -99,19 +158,23 @@ export default function MsdsDocumentPage() {
     )
   }
 
+  const isInsideBrand = selectedBrandId !== null
+
   return (
     <main className="mx-auto min-h-dvh w-full max-w-md bg-background text-foreground shadow-sm">
       <header className="flex h-16 items-center justify-between border-b border-border px-4">
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={isInsideBrand ? closeBrand : () => router.back()}
             className="flex size-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="이전 화면으로 이동"
+            aria-label={isInsideBrand ? "브랜드 목록으로 이동" : "이전 화면으로 이동"}
           >
             <ArrowLeft className="size-5" aria-hidden="true" />
           </button>
-          <h1 className="truncate text-lg font-bold tracking-tight">MSDS</h1>
+          <h1 className="truncate text-lg font-bold tracking-tight">
+            {selectedBrand?.name ?? "MSDS"}
+          </h1>
         </div>
 
         <button
@@ -128,54 +191,95 @@ export default function MsdsDocumentPage() {
         <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold text-primary">현장 문서함</p>
           <h2 id="msds-list-title" className="text-balance text-2xl font-bold tracking-tight">
-            필요한 MSDS를 찾아보세요
+            {isInsideBrand ? `${selectedBrand?.name ?? "브랜드"} 문서` : "브랜드를 선택하세요"}
           </h2>
-          <p className="text-sm leading-6 text-muted-foreground">문서를 누르면 전체 화면으로 열립니다.</p>
+          <p className="text-sm leading-6 text-muted-foreground">
+            {isInsideBrand
+              ? "문서를 누르면 전체 화면으로 열립니다."
+              : "브랜드 폴더에서 필요한 MSDS를 빠르게 찾을 수 있습니다."}
+          </p>
         </div>
 
-        <label className="relative block" htmlFor="msdsument-search">
+        <label className="relative block" htmlFor="msds-document-search">
           <Search
             className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
           />
-          <span className="sr-only">MSDS 제목 검색</span>
+          <span className="sr-only">{isInsideBrand ? "문서 제목 검색" : "브랜드 또는 문서 제목 검색"}</span>
           <input
-            id="msdsument-search"
+            id="msds-document-search"
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="MSDS 제목 검색"
+            placeholder={isInsideBrand ? "이 브랜드의 문서 검색" : "브랜드 또는 문서 검색"}
             className="h-12 w-full rounded-xl border border-input bg-card pl-12 pr-4 text-base outline-none transition-shadow placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </label>
 
         {isLoading ? (
           <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground" role="status">
-            문서를 불러오는 중입니다.
+            MSDS 문서함을 불러오는 중입니다.
           </p>
         ) : error ? (
           <p className="rounded-xl bg-muted p-6 text-center text-sm text-destructive" role="alert">
-            문서를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+            MSDS 문서함을 불러오지 못했습니다. 데이터베이스 설정을 확인해 주세요.
           </p>
-        ) : filteredDocuments.length === 0 ? (
+        ) : isInsideBrand && !selectedBrand ? (
           <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">
-            {query ? "검색 결과가 없습니다." : "등록된 MSDS가 없습니다."}
+            선택한 브랜드를 찾을 수 없습니다.
+          </p>
+        ) : isInsideBrand ? (
+          filteredDocuments.length === 0 ? (
+            <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">
+              {query ? "검색 결과가 없습니다." : "이 브랜드에 등록된 MSDS가 없습니다."}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {filteredDocuments.map((document) => (
+                <li key={document.id}>
+                  <button
+                    type="button"
+                    onClick={() => openDocument(document)}
+                    className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left shadow-sm transition-transform hover:border-primary/40 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                      <FileText className="size-5" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block break-words text-base font-semibold leading-6">{document.title}</span>
+                      <span className="mt-1 block text-sm text-muted-foreground">
+                        PDF 문서 보기 · {document.uploaded_at}
+                      </span>
+                    </span>
+                    <span className="font-mono text-lg text-muted-foreground" aria-hidden="true">
+                      {">"}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : filteredBrands.length === 0 ? (
+          <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">
+            {query ? "검색 결과가 없습니다." : "등록된 브랜드가 없습니다."}
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {filteredDocuments.map((document) => (
-              <li key={document.id}>
+            {filteredBrands.map((brand) => (
+              <li key={brand.id}>
                 <button
                   type="button"
-                  onClick={() => openDocument(document)}
+                  onClick={() => openBrand(brand.id)}
                   className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left shadow-sm transition-transform hover:border-primary/40 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                    <FileText className="size-5" aria-hidden="true" />
+                    <Folder className="size-5" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-base font-semibold">{document.title}</span>
-                    <span className="mt-1 block text-sm text-muted-foreground">PDF 문서 보기</span>
+                    <span className="block truncate text-base font-semibold">{brand.name}</span>
+                    <span className="mt-1 block text-sm text-muted-foreground">
+                      MSDS {documentCountByBrand.get(brand.id) ?? 0}건
+                    </span>
                   </span>
                   <span className="font-mono text-lg text-muted-foreground" aria-hidden="true">
                     {">"}

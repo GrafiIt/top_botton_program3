@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, BriefcaseBusiness, MapPin, Search, Settings, UserRound } from "lucide-react"
+import { ArrowLeft, BriefcaseBusiness, MapPin, Phone, Search, Settings, UserRound } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
@@ -90,7 +90,7 @@ export default function BunkeringPage() {
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                   <div className="flex min-w-0 flex-col gap-1"><dt className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><MapPin className="size-3.5" aria-hidden="true" />선적지</dt><dd className="break-words font-medium">{record.loading_point || "-"}</dd></div>
                   <div className="flex min-w-0 flex-col gap-1"><dt className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><UserRound className="size-3.5" aria-hidden="true" />담당자</dt><dd className="break-words font-medium">{record.manager_name || "-"}</dd></div>
-                  <div className="flex min-w-0 flex-col gap-1"><dt className="text-xs font-semibold text-muted-foreground">연락처</dt><dd className="break-words font-medium">{record.contact || "-"}</dd></div>
+                  <div className="flex min-w-0 flex-col gap-1"><dt className="text-xs font-semibold text-muted-foreground">연락처</dt><dd className="break-words font-medium">{record.contact ? <a href={`tel:${record.contact.replace(/[^0-9+]/g, "")}`} aria-label={`${record.manager_name}에게 전화하기`} className="flex items-center gap-1 font-bold text-blue-600 underline-offset-2 hover:underline"><Phone className="size-3.5" aria-hidden="true" />{record.contact}</a> : "-"}</dd></div>
                   <div className="flex min-w-0 flex-col gap-1"><dt className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><BriefcaseBusiness className="size-3.5" aria-hidden="true" />담당내역</dt><dd className="break-words font-medium">{record.task_details || "-"}</dd></div>
                 </dl>
               </article>

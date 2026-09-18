@@ -63,7 +63,6 @@ export default function BunkeringPage() {
 
       <section className="flex flex-col gap-5 px-4 py-6" aria-labelledby="bunkering-title">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-primary">현장 운항 정보</p>
           <h2 id="bunkering-title" className="text-balance text-2xl font-bold tracking-tight">벙커링 현황을 확인하세요</h2>
           <p className="text-sm leading-6 text-muted-foreground">선박, 항구, 담당자 및 업무 내용으로 검색할 수 있습니다.</p>
         </div>

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, ChevronRight, PlusCircle, Calendar, Eye, List, Search, X } from "lucide-react"
+import { ArrowLeft, ChevronLeft, ChevronRight, PlusCircle, Calendar, Eye, List, Search, X } from "lucide-react"
 
 interface Notice {
   id: string
@@ -108,9 +108,21 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 md:py-12 lg:px-8">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">상하차지정보</h1>
-            <p className="mt-2 text-muted-foreground">상하차지 최신 소식을 확인하세요</p>
+          <div className="flex items-start gap-3 sm:items-center">
+            <Link href="/">
+              <Button
+                aria-label="메인 메뉴로 돌아가기"
+                className="mt-1 shrink-0 rounded-full hover:bg-muted sm:mt-0"
+                size="icon"
+                variant="ghost"
+              >
+                <ArrowLeft className="size-6" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">상하차지정보</h1>
+              <p className="mt-2 text-muted-foreground">상하차지 최신 소식을 확인하세요</p>
+            </div>
           </div>
           <div className="flex w-full flex-col items-start gap-2 md:w-auto md:items-end">
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap md:w-auto">

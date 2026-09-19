@@ -74,7 +74,6 @@ export default function ShipOilPage() {
 
       <section className="flex flex-col gap-5 px-4 py-6" aria-labelledby="ship-oil-heading">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-primary">PORT DIRECTORY</p>
           <h2 id="ship-oil-heading" className="text-balance text-2xl font-bold tracking-tight">
             도착지 부두를 빠르게 확인하세요
           </h2>

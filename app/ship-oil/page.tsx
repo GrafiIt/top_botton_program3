@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, MapPin, Search, Settings, Ship } from "lucide-react"
+import { ArrowLeft, LayoutList, MapPin, Search, Settings, Ship, Table } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
@@ -29,6 +29,7 @@ async function fetchShipOilRecords(): Promise<ShipOilRecord[]> {
 export default function ShipOilPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
+  const [viewMode, setViewMode] = useState<"card" | "table">("card")
   const { data: records = [], error, isLoading } = useSWR(
     "ship-oil-records",
     fetchShipOilRecords,
@@ -82,6 +83,39 @@ export default function ShipOilPage() {
           </p>
         </div>
 
+        <div
+          className="grid grid-cols-2 rounded-xl bg-muted p-1"
+          role="group"
+          aria-label="목록 보기 방식"
+        >
+          <button
+            type="button"
+            onClick={() => setViewMode("card")}
+            aria-pressed={viewMode === "card"}
+            className={`flex h-10 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              viewMode === "card"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <LayoutList className="size-4" aria-hidden="true" />
+            카드 보기
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            aria-pressed={viewMode === "table"}
+            className={`flex h-10 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              viewMode === "table"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Table className="size-4" aria-hidden="true" />
+            표로 보기
+          </button>
+        </div>
+
         <label className="relative block" htmlFor="ship-oil-search">
           <span className="sr-only">Agent 또는 도착지 부두명 검색</span>
           <Search
@@ -112,6 +146,29 @@ export default function ShipOilPage() {
           <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
             {searchTerm ? "검색 결과가 없습니다." : "등록된 도착지 정보가 없습니다."}
           </p>
+        ) : viewMode === "table" ? (
+          <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm" aria-live="polite">
+            <table className="w-full min-w-max border-collapse text-left text-sm">
+              <thead className="bg-slate-800 text-slate-100">
+                <tr>
+                  <th scope="col" className="whitespace-nowrap px-4 py-3 font-semibold">No</th>
+                  <th scope="col" className="whitespace-nowrap px-4 py-3 font-semibold">Agent</th>
+                  <th scope="col" className="whitespace-nowrap px-4 py-3 font-semibold">도착지 부두명</th>
+                  <th scope="col" className="whitespace-nowrap px-4 py-3 font-semibold">상세 주소</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRecords.map((record, index) => (
+                  <tr key={record.id} className="border-b border-border last:border-b-0">
+                    <td className="whitespace-nowrap px-4 py-3 font-semibold text-muted-foreground">{index + 1}</td>
+                    <td className="whitespace-nowrap px-4 py-3 font-semibold">{record.agent}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{record.pier_name}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{record.address}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="flex flex-col gap-3" aria-live="polite">
             {filteredRecords.map((record, index) => (

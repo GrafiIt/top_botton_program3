@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { PlusCircle, Calendar, Eye, List, Search, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, PlusCircle, Calendar, Eye, List, Search, X } from "lucide-react"
 
 interface Notice {
   id: string
@@ -15,6 +15,8 @@ interface Notice {
   images?: string[]
   attachments?: any[]
 }
+
+const ITEMS_PER_PAGE = 10
 
 function stripHtml(html: string): string {
   return html
@@ -33,6 +35,7 @@ function stripHtml(html: string): string {
 export default function HomePage() {
   const [notices, setNotices] = useState<Notice[]>([])
   const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
 
@@ -41,6 +44,10 @@ export default function HomePage() {
     setIsAdmin(adminLoggedIn === "true")
     fetchNotices()
   }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
 
   const fetchNotices = async () => {
     try {
@@ -83,6 +90,12 @@ export default function HomePage() {
 
   const filteredNotices = notices.filter((notice) =>
     notice.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(filteredNotices.length / ITEMS_PER_PAGE)
+  const paginatedNotices = filteredNotices.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   )
 
   const handleLogout = () => {
@@ -167,37 +180,87 @@ export default function HomePage() {
                 <span className="font-semibold text-foreground">&ldquo;{searchQuery}&rdquo;</span> 검색 결과 {filteredNotices.length}건
               </p>
             )}
-          <div className="grid gap-6">
-            {filteredNotices.map((notice) => (
-              <Card key={notice.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <Link href={`/notices/${notice.id}`}>
-                    <CardTitle className="text-2xl hover:text-primary transition-colors cursor-pointer">
-                      {notice.title}
-                    </CardTitle>
-                  </Link>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(notice.created_at)}
+            <div className="grid gap-6">
+              {paginatedNotices.map((notice) => (
+                <Card key={notice.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <Link href={`/notices/${notice.id}`}>
+                      <CardTitle className="text-2xl hover:text-primary transition-colors cursor-pointer">
+                        {notice.title}
+                      </CardTitle>
+                    </Link>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {formatDate(notice.created_at)}
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground line-clamp-2">
-                    {stripHtml(notice.content ?? "").substring(0, 200)}
-                    {stripHtml(notice.content ?? "").length > 200 && "..."}
-                  </p>
-                  <Link href={`/notices/${notice.id}`}>
-                    <Button variant="ghost" className="mt-4 gap-2">
-                      <Eye className="w-4 h-4" />
-                      자세히 보기
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground line-clamp-2">
+                      {stripHtml(notice.content ?? "").substring(0, 200)}
+                      {stripHtml(notice.content ?? "").length > 200 && "..."}
+                    </p>
+                    <Link href={`/notices/${notice.id}`}>
+                      <Button variant="ghost" className="mt-4 gap-2">
+                        <Eye className="w-4 h-4" />
+                        자세히 보기
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {filteredNotices.length > 0 && totalPages > 1 && (
+              <nav className="mt-8 flex items-center gap-2" aria-label="공지사항 페이지 이동">
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                  aria-label="이전 페이지"
+                  className="shrink-0"
+                >
+                  <ChevronLeft data-icon="inline-start" />
+                  이전
+                </Button>
+
+                <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto py-1">
+                  {Array.from({ length: totalPages }, (_, index) => {
+                    const page = index + 1
+                    return (
+                      <Button
+                        key={page}
+                        type="button"
+                        size="lg"
+                        variant={currentPage === page ? "default" : "outline"}
+                        onClick={() => setCurrentPage(page)}
+                        aria-label={`${page}페이지`}
+                        aria-current={currentPage === page ? "page" : undefined}
+                        className="min-w-11 shrink-0"
+                      >
+                        {page}
+                      </Button>
+                    )
+                  })}
+                </div>
+
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPage === totalPages}
+                  aria-label="다음 페이지"
+                  className="shrink-0"
+                >
+                  다음
+                  <ChevronRight data-icon="inline-end" />
+                </Button>
+              </nav>
+            )}
           </>
         )}
       </div>

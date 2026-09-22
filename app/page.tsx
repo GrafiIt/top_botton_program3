@@ -2,7 +2,7 @@ import Link from "next/link"
 
 const menuItems = [
   { label: "Tool Box Meeting", href: "/toolbox" },
-  { label: "교육 현황 관리", href: "#" },
+  { label: "교육 현황 관리", href: "/education" },
   { label: "MSDS", href: "/msds" },
   { label: "상/하차지 정보", href: "/loading-info" },
   { label: "벙커링 현황", href: "/bunkering" },

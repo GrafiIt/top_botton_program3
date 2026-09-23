@@ -74,6 +74,19 @@ const emptyCourseForm: CourseForm = {
   course_name: "",
 }
 
+const DEFAULT_COURSES = [
+  { code: "DEFAULT-01", name: "JMP 교육" },
+  { code: "DEFAULT-02", name: "LSR 교육" },
+  { code: "DEFAULT-03", name: "개인 건강검진" },
+  { code: "DEFAULT-04", name: "방어운전" },
+  { code: "DEFAULT-05", name: "비상대응훈련" },
+  { code: "DEFAULT-06", name: "운전자경력증명서" },
+  { code: "DEFAULT-07", name: "운전적성정밀 자격유지 검사(고령운전자 대상)" },
+  { code: "DEFAULT-08", name: "위험물운송자 교육" },
+  { code: "DEFAULT-09", name: "탱크로리 이동탱크 일반점검표" },
+  { code: "DEFAULT-10", name: "화물종사자 교육" },
+]
+
 async function fetchEducationRecords(): Promise<EducationRecord[]> {
   const supabase = createClient()
   const { data, error } = await supabase
@@ -100,7 +113,13 @@ async function fetchVerifiedUsers(): Promise<string[]> {
     .order("user_name", { ascending: true })
 
   if (error) throw error
-  return Array.from(new Set((data ?? []).map((item) => item.user_name).filter((userName): userName is string => Boolean(userName))))
+  return Array.from(
+    new Set(
+      (data ?? [])
+        .map((item: { user_name: string | null }) => item.user_name)
+        .filter((userName: string | null): userName is string => Boolean(userName)),
+    ),
+  )
 }
 
 function toEditingRecord(record: EducationRecord): EditingRecord {
@@ -293,19 +312,21 @@ export default function EducationAdminPage() {
       const { error: insertError } = await supabase
         .schema("drivermgm")
         .from("human_gw_education")
-        .insert({
-          employee_number: employeeForm.employee_number,
-          employee_name: employeeForm.employee_name,
-          department: employeeForm.department,
-          position: employeeForm.position,
-          verified_user: employeeForm.verified_user || null,
-          course_code: "INIT",
-          course_name: "신규 등록 (교육 없음)",
-          course_order: 0,
-          status: "completed",
-          completed_date: null,
-          next_education_date: null,
-        })
+        .insert(
+          DEFAULT_COURSES.map((course, index) => ({
+            employee_number: employeeForm.employee_number,
+            employee_name: employeeForm.employee_name,
+            department: employeeForm.department,
+            position: employeeForm.position,
+            verified_user: employeeForm.verified_user || null,
+            course_code: course.code,
+            course_name: course.name,
+            course_order: index,
+            status: "incomplete" as const,
+            completed_date: null,
+            next_education_date: null,
+          })),
+        )
 
       if (insertError) throw insertError
 

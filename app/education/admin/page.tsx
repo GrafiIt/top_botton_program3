@@ -173,8 +173,10 @@ export default function EducationAdminPage() {
   const [draftCourses, setDraftCourses] = useState<EditingRecord[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [isEmployeeDialogOpen, setIsEmployeeDialogOpen] = useState(false)
+  const [isEditEmployeeDialogOpen, setIsEditEmployeeDialogOpen] = useState(false)
   const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false)
   const [employeeForm, setEmployeeForm] = useState<EmployeeForm>(emptyEmployeeForm)
+  const [editEmployeeForm, setEditEmployeeForm] = useState<EmployeeForm>(emptyEmployeeForm)
   const [courseForm, setCourseForm] = useState<CourseForm>(emptyCourseForm)
   const [isMutating, setIsMutating] = useState(false)
 
@@ -300,6 +302,51 @@ export default function EducationAdminPage() {
       window.alert(`저장하지 못했습니다. ${getErrorMessage(saveError)}`)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const openEditEmployeeDialog = () => {
+    if (!selectedEmployee) return
+
+    setEditEmployeeForm({
+      employee_number: selectedEmployee.employee_number,
+      employee_name: selectedEmployee.employee_name,
+      department: selectedEmployee.department,
+      position: selectedEmployee.position,
+      verified_user: selectedEmployee.verified_user ?? "",
+    })
+    setIsEditEmployeeDialogOpen(true)
+  }
+
+  const handleUpdateEmployee = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedEmployee) return
+
+    setIsMutating(true)
+    try {
+      const supabase = createClient()
+      const { error: updateError } = await supabase
+        .schema("drivermgm")
+        .from("human_gw_education")
+        .update({
+          employee_number: editEmployeeForm.employee_number,
+          employee_name: editEmployeeForm.employee_name,
+          department: editEmployeeForm.department,
+          position: editEmployeeForm.position,
+          verified_user: editEmployeeForm.verified_user || null,
+        })
+        .eq("employee_number", selectedEmployee.employee_number)
+
+      if (updateError) throw updateError
+
+      setSelectedEmployeeNumber(editEmployeeForm.employee_number)
+      setIsEditEmployeeDialogOpen(false)
+      await mutate()
+      window.alert("근로자 정보가 수정되었습니다.")
+    } catch (updateError) {
+      window.alert(`근로자 정보를 수정하지 못했습니다. ${getErrorMessage(updateError)}`)
+    } finally {
+      setIsMutating(false)
     }
   }
 
@@ -528,22 +575,32 @@ export default function EducationAdminPage() {
 
         <section className="flex flex-col gap-5 px-4 py-6">
           <div className="rounded-3xl bg-primary p-5 text-primary-foreground">
-            <div className="flex items-center gap-3">
-              <span className="flex size-11 items-center justify-center rounded-2xl bg-primary-foreground/15">
-                <UserRound className="size-6" aria-hidden="true" />
-              </span>
-              <div>
-                <h2 className="text-xl font-bold">{selectedEmployee.employee_name}</h2>
-                <p className="mt-1 text-sm text-primary-foreground/75">
-                  {selectedEmployee.employee_number} · {selectedEmployee.department} ·{" "}
-                  {selectedEmployee.position}
-                </p>
-                {selectedEmployee.verified_user ? (
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-primary-foreground/15">
+                  <UserRound className="size-6" aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 className="text-xl font-bold">{selectedEmployee.employee_name}</h2>
                   <p className="mt-1 text-sm text-primary-foreground/75">
-                    확인사용자: {selectedEmployee.verified_user}
+                    {selectedEmployee.employee_number} · {selectedEmployee.department} ·{" "}
+                    {selectedEmployee.position}
                   </p>
-                ) : null}
+                  {selectedEmployee.verified_user ? (
+                    <p className="mt-1 text-sm text-primary-foreground/75">
+                      확인사용자: {selectedEmployee.verified_user}
+                    </p>
+                  ) : null}
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={openEditEmployeeDialog}
+                disabled={isMutating}
+                className="text-sm font-semibold text-primary-foreground/80 hover:text-primary-foreground disabled:opacity-50"
+              >
+                편집
+              </button>
             </div>
           </div>
 
@@ -685,6 +742,104 @@ export default function EducationAdminPage() {
             </button>
           </div>
         </section>
+
+        <Dialog
+          open={isEditEmployeeDialogOpen}
+          onOpenChange={(open) => {
+            setIsEditEmployeeDialogOpen(open)
+            if (!open) setEditEmployeeForm(emptyEmployeeForm)
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>근로자 정보 수정</DialogTitle>
+              <DialogDescription>선택한 근로자의 기본 정보를 수정합니다.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdateEmployee} className="flex flex-col gap-4">
+              <TextField
+                id="edit-employee-number"
+                label="사번"
+                value={editEmployeeForm.employee_number}
+                onChange={(employee_number) =>
+                  setEditEmployeeForm((current) => ({ ...current, employee_number }))
+                }
+                placeholder="예: EMP001"
+              />
+              <TextField
+                id="edit-employee-name"
+                label="성명"
+                value={editEmployeeForm.employee_name}
+                onChange={(employee_name) =>
+                  setEditEmployeeForm((current) => ({ ...current, employee_name }))
+                }
+                placeholder="근로자 성명"
+              />
+              <TextField
+                id="edit-employee-department"
+                label="부서"
+                value={editEmployeeForm.department}
+                onChange={(department) =>
+                  setEditEmployeeForm((current) => ({ ...current, department }))
+                }
+                placeholder="소속 부서"
+              />
+              <TextField
+                id="edit-employee-position"
+                label="직급"
+                value={editEmployeeForm.position}
+                onChange={(position) =>
+                  setEditEmployeeForm((current) => ({ ...current, position }))
+                }
+                placeholder="직급 또는 직책"
+              />
+              <label className="flex flex-col gap-2" htmlFor="edit-verified-user">
+                <span className="text-sm font-semibold">확인사용자 (선택)</span>
+                <select
+                  id="edit-verified-user"
+                  value={editEmployeeForm.verified_user ?? ""}
+                  onChange={(event) =>
+                    setEditEmployeeForm((current) => ({
+                      ...current,
+                      verified_user: event.target.value,
+                    }))
+                  }
+                  className="h-11 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">선택 안 함</option>
+                  {verifiedUsers.map((userName) => (
+                    <option key={userName} value={userName}>
+                      {userName}
+                    </option>
+                  ))}
+                </select>
+                {isVerifiedUsersLoading ? (
+                  <span className="text-xs text-muted-foreground">확인사용자 목록을 불러오는 중입니다.</span>
+                ) : null}
+                {verifiedUsersError ? (
+                  <span className="text-xs text-destructive">확인사용자 목록을 불러오지 못했습니다. 선택 없이 수정할 수 있습니다.</span>
+                ) : null}
+              </label>
+              <DialogFooter>
+                <button
+                  type="button"
+                  onClick={() => setIsEditEmployeeDialogOpen(false)}
+                  disabled={isMutating}
+                  className="h-10 rounded-lg border border-border px-4 text-sm font-semibold disabled:opacity-50"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isMutating}
+                  className="flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                >
+                  {isMutating ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : null}
+                  수정 완료
+                </button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={isCourseDialogOpen} onOpenChange={setIsCourseDialogOpen}>
           <DialogContent>

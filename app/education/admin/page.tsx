@@ -24,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { createClient } from "@/utils/supabase/client"
 
 type EducationStatus = "completed" | "incomplete" | "exempt"
@@ -60,8 +61,6 @@ type CourseForm = {
   course_name: string
 }
 
-const ADMIN_ID = "human"
-const ADMIN_PASSWORD = "1024"
 const emptyEmployeeForm: EmployeeForm = {
   employee_number: "",
   employee_name: "",
@@ -166,9 +165,14 @@ function TextField({
 
 export default function EducationAdminPage() {
   const router = useRouter()
-  const [credentials, setCredentials] = useState({ id: "", password: "" })
-  const [loginError, setLoginError] = useState("")
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const {
+    isAuthenticated,
+    isInitialized,
+    credentials,
+    loginError,
+    setCredentials,
+    login,
+  } = useAdminAuth()
   const [selectedEmployeeNumber, setSelectedEmployeeNumber] = useState<string | null>(null)
   const [draftCourses, setDraftCourses] = useState<EditingRecord[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -210,19 +214,6 @@ export default function EducationAdminPage() {
 
   const selectedEmployee =
     employees.find((employee) => employee.employee_number === selectedEmployeeNumber) ?? null
-
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    if (credentials.id !== ADMIN_ID || credentials.password !== ADMIN_PASSWORD) {
-      setLoginError("아이디 또는 비밀번호가 올바르지 않습니다.")
-      return
-    }
-
-    setCredentials({ id: "", password: "" })
-    setLoginError("")
-    setIsAuthenticated(true)
-  }
 
   const selectEmployee = (employeeNumber: string) => {
     setSelectedEmployeeNumber(employeeNumber)
@@ -486,6 +477,15 @@ export default function EducationAdminPage() {
     }
   }
 
+  if (!isInitialized) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8" aria-busy="true">
+        <LoaderCircle className="size-6 animate-spin text-primary" aria-hidden="true" />
+        <span className="sr-only">관리자 인증 상태를 확인하는 중입니다.</span>
+      </main>
+    )
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8">
@@ -504,7 +504,13 @@ export default function EducationAdminPage() {
               교육 정보를 수정하려면 관리자 인증이 필요합니다.
             </p>
           </div>
-          <form onSubmit={handleLogin} className="mt-6 flex flex-col gap-4">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              login()
+            }}
+            className="mt-6 flex flex-col gap-4"
+          >
             <TextField
               id="admin-id"
               label="아이디"

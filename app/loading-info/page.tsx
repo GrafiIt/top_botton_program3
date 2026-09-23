@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -37,11 +38,9 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const { isAdmin, handleLogout } = useAdminAuth()
 
   useEffect(() => {
-    const adminLoggedIn = sessionStorage.getItem("admin_logged_in")
-    setIsAdmin(adminLoggedIn === "true")
     fetchNotices()
   }, [])
 
@@ -97,12 +96,6 @@ export default function HomePage() {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   )
-
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin_logged_in")
-    setIsAdmin(false)
-    alert("로그아웃되었습니다.")
-  }
 
   return (
     <div className="min-h-screen bg-background">

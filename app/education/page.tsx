@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, BookOpenCheck, CalendarDays, CheckCircle2, ChevronRight, CircleAlert, LoaderCircle, Settings, UserRound, XCircle } from "lucide-react"
+import { ArrowLeft, BookOpenCheck, CalendarDays, CheckCircle2, ChevronRight, CircleAlert, LoaderCircle, Settings, TriangleAlert, UserRound, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
@@ -20,12 +20,6 @@ type EducationRecord = {
   completed_date: string | null
   next_education_date: string | null
   status: EducationStatus
-}
-
-const statusLabel: Record<EducationStatus, string> = {
-  completed: "완료",
-  incomplete: "미완료",
-  exempt: "면제",
 }
 
 async function fetchEducationRecords(): Promise<EducationRecord[]> {
@@ -48,10 +42,43 @@ function formatDate(value: string | null) {
   )
 }
 
-function StatusIcon({ status }: { status: EducationStatus }) {
-  if (status === "completed") return <CheckCircle2 className="size-5 text-primary" aria-hidden="true" />
-  if (status === "exempt") return <CircleAlert className="size-5 text-muted-foreground" aria-hidden="true" />
-  return <XCircle className="size-5 text-destructive" aria-hidden="true" />
+function CourseStatusBadge({ course }: { course: EducationRecord }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const isOverdue = Boolean(
+    course.next_education_date &&
+      course.next_education_date < today &&
+      (!course.completed_date || course.completed_date < course.next_education_date),
+  )
+
+  if (isOverdue) {
+    return (
+      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-semibold text-yellow-950">
+        <TriangleAlert className="size-4" aria-hidden="true" />기한 초과
+      </span>
+    )
+  }
+
+  if (course.status === "completed") {
+    return (
+      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+        <CheckCircle2 className="size-4" aria-hidden="true" />완료
+      </span>
+    )
+  }
+
+  if (course.status === "exempt") {
+    return (
+      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+        <CircleAlert className="size-4" aria-hidden="true" />면제
+      </span>
+    )
+  }
+
+  return (
+    <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive">
+      <XCircle className="size-4" aria-hidden="true" />미완료
+    </span>
+  )
 }
 
 export default function EducationPage() {
@@ -115,9 +142,7 @@ export default function EducationPage() {
                     <p className="text-xs font-semibold tracking-wide text-muted-foreground">{course.course_code}</p>
                     <h4 className="mt-1 text-base font-bold">{course.course_name}</h4>
                   </div>
-                  <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold">
-                    <StatusIcon status={course.status} />{statusLabel[course.status]}
-                  </span>
+                  <CourseStatusBadge course={course} />
                 </div>
                 <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
                   <div><dt className="text-xs font-medium text-muted-foreground">교육 이수일자</dt><dd className="mt-1 font-semibold">{formatDate(course.completed_date)}</dd></div>

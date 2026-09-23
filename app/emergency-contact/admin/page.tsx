@@ -4,10 +4,8 @@ import { ArrowLeft, LoaderCircle, LockKeyhole, Pencil, Phone, Plus, Save, Trash2
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import useSWR from "swr"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { createClient } from "@/utils/supabase/client"
-
-const ADMIN_ID = "human"
-const ADMIN_PASSWORD = "1024"
 
 type EmergencyContact = {
   id: string
@@ -52,9 +50,7 @@ function formatPhoneNumber(value: string) {
 
 export default function EmergencyContactAdminPage() {
   const router = useRouter()
-  const [credentials, setCredentials] = useState({ id: "", password: "" })
-  const [loginError, setLoginError] = useState("")
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { isAuthenticated, isInitialized, credentials, setCredentials, login, loginError } = useAdminAuth()
   const [form, setForm] = useState<ContactForm>(EMPTY_FORM)
   const [isSpecialNumber, setIsSpecialNumber] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -66,19 +62,6 @@ export default function EmergencyContactAdminPage() {
     isLoading: isLoadingContacts,
     mutate,
   } = useSWR<EmergencyContact[]>(isAuthenticated ? "emergency-contacts-admin" : null, fetchEmergencyContacts)
-
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    if (credentials.id !== ADMIN_ID || credentials.password !== ADMIN_PASSWORD) {
-      setLoginError("아이디 또는 비밀번호가 올바르지 않습니다.")
-      return
-    }
-
-    setLoginError("")
-    setCredentials({ id: "", password: "" })
-    setIsAuthenticated(true)
-  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -205,6 +188,10 @@ export default function EmergencyContactAdminPage() {
     }
   }
 
+  if (!isInitialized) {
+    return <main className="flex min-h-dvh items-center justify-center bg-muted" aria-busy="true"><LoaderCircle className="size-6 animate-spin text-primary" aria-hidden="true" /><span className="sr-only">관리자 인증 상태를 확인하는 중입니다.</span></main>
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8">
@@ -217,7 +204,7 @@ export default function EmergencyContactAdminPage() {
             <p className="text-sm leading-6 text-muted-foreground">비상연락망을 관리하려면 관리자 정보를 입력해 주세요.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="mt-6 flex flex-col gap-4">
+          <form onSubmit={(event) => { event.preventDefault(); login() }} className="mt-6 flex flex-col gap-4">
             <label className="flex flex-col gap-2" htmlFor="admin-id">
               <span className="text-sm font-semibold">아이디</span>
               <span className="relative block">

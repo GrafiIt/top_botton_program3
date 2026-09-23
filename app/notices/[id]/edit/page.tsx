@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -51,33 +52,16 @@ function normalizeContent(raw: string): string {
   return raw.replace(/\r\n/g, "\n").replace(/\n/g, "<br>")
 }
 
-async function verifyAuth(authId: string, authPs: string): Promise<boolean> {
-  const { createClient } = await import("@/lib/supabase/client")
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("all_program_auths")
-    .select("auth_id, auth_ps")
-    .eq("company_code", "human")
-    .eq("auth_id", authId)
-    .eq("auth_ps", authPs)
-    .maybeSingle()
-
-  if (error || !data) return false
-  return true
-}
-
 export default function EditNoticePage() {
   const params = useParams()
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const { isAuthenticated, isInitialized, handleLogout } = useAdminAuth()
   const [notice, setNotice] = useState<Notice | null>(null)
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [images, setImages] = useState<string[]>([])
   const [attachments, setAttachments] = useState<any[]>([])
   const [videoUrl, setVideoUrl] = useState("")
-  const [authId, setAuthId] = useState(searchParams.get("authId") || "")
-  const [authPs, setAuthPs] = useState(searchParams.get("authPs") || "")
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -190,20 +174,8 @@ export default function EditNoticePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!authId || !authPs) {
-      alert("아이디와 비밀번호를 모두 입력해주세요.")
-      return
-    }
-
     setIsSaving(true)
     try {
-      const valid = await verifyAuth(authId, authPs)
-      if (!valid) {
-        alert("아이디 또는 비밀번호가 올바르지 않습니다.")
-        setIsSaving(false)
-        return
-      }
-
       const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
       const { error } = await supabase
@@ -226,10 +198,14 @@ export default function EditNoticePage() {
     }
   }
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin_logged_in")
-    alert("로그아웃되었습니다.")
-    router.push("/notices")
+
+  if (!isInitialized) {
+    return <main className="flex min-h-dvh items-center justify-center bg-background" aria-busy="true"><span className="sr-only">관리자 인증 상태를 확인하는 중입니다.</span></main>
+  }
+
+  if (!isAuthenticated) {
+    router.replace("/notices-admin/login")
+    return null
   }
 
   if (isLoading) {
@@ -258,29 +234,6 @@ export default function EditNoticePage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <div>
-                  <Label htmlFor="authId">관리자 아이디</Label>
-                  <Input
-                    id="authId"
-                    type="text"
-                    value={authId}
-                    onChange={(e) => setAuthId(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="authPs">관리자 비밀번호</Label>
-                  <Input
-                    id="authPs"
-                    type="password"
-                    value={authPs}
-                    onChange={(e) => setAuthPs(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
               <div>
                 <Label htmlFor="title">제목</Label>
                 <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -390,7 +343,7 @@ export default function EditNoticePage() {
               </div>
 
               <div className="flex justify-center">
-                <Button type="button" size="sm" variant="ghost" onClick={handleLogout} className="text-xs">
+                <Button type="button" size="sm" variant="ghost" onClick={() => { handleLogout(); router.push("/notices") }} className="text-xs">
                   로그아웃
                 </Button>
               </div>

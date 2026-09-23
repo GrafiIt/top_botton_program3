@@ -2,8 +2,9 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -33,6 +34,7 @@ function getEmbedUrl(url: string): string | null {
 
 export default function NewNoticePage() {
   const router = useRouter()
+  const { isAuthenticated, isInitialized, handleLogout } = useAdminAuth()
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [images, setImages] = useState<string[]>([])
@@ -40,13 +42,6 @@ export default function NewNoticePage() {
   const [videoUrl, setVideoUrl] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-
-  useEffect(() => {
-    const isLoggedIn = localStorage.getItem("admin_logged_in")
-    if (!isLoggedIn) {
-      router.push("/notices-admin/login")
-    }
-  }, [router])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -150,13 +145,14 @@ export default function NewNoticePage() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin_logged_in")
-    alert("로그아웃되었습니다.")
-    router.push("/notices")
-  }
 
   const embedUrl = getEmbedUrl(videoUrl)
+
+  if (!isInitialized) return <main className="flex min-h-dvh items-center justify-center bg-background" aria-busy="true"><span className="sr-only">관리자 인증 상태를 확인하는 중입니다.</span></main>
+  if (!isAuthenticated) {
+    router.replace("/notices-admin/login")
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -293,7 +289,7 @@ export default function NewNoticePage() {
               </div>
 
               <div className="flex justify-center">
-                <Button type="button" size="sm" variant="ghost" onClick={handleLogout} className="text-xs">
+                <Button type="button" size="sm" variant="ghost" onClick={() => { handleLogout(); router.push("/notices") }} className="text-xs">
                   로그아웃
                 </Button>
               </div>

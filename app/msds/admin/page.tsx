@@ -28,10 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { createClient } from "@/utils/supabase/client"
-
-const ADMIN_ID = "human"
-const ADMIN_PASSWORD = "1024"
 const STORAGE_BUCKET = "work_documents"
 
 function getToday() {
@@ -108,9 +106,7 @@ function getStoragePath(pdfUrl: string) {
 export default function MsdsDocumentAdminPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [credentials, setCredentials] = useState({ id: "", password: "" })
-  const [loginError, setLoginError] = useState("")
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { isAuthenticated, isInitialized, credentials, setCredentials, login, loginError } = useAdminAuth()
   const [newBrandName, setNewBrandName] = useState("")
   const [editingBrandId, setEditingBrandId] = useState<string | null>(null)
   const [editingBrandName, setEditingBrandName] = useState("")
@@ -153,19 +149,6 @@ export default function MsdsDocumentAdminPage() {
       document.title.normalize("NFC").toLowerCase().includes(normalizedQuery),
     )
   }, [data.documents, documentQuery])
-
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    if (credentials.id !== ADMIN_ID || credentials.password !== ADMIN_PASSWORD) {
-      setLoginError("아이디 또는 비밀번호가 올바르지 않습니다.")
-      return
-    }
-
-    setLoginError("")
-    setCredentials({ id: "", password: "" })
-    setIsAuthenticated(true)
-  }
 
   const isDuplicateBrandName = (name: string, excludedId?: string) =>
     data.brands.some(
@@ -553,6 +536,10 @@ export default function MsdsDocumentAdminPage() {
     }
   }
 
+  if (!isInitialized) {
+    return <main className="flex min-h-dvh items-center justify-center bg-muted" aria-busy="true"><LoaderCircle className="size-6 animate-spin text-primary" aria-hidden="true" /><span className="sr-only">관리자 인증 상태를 확인하는 중입니다.</span></main>
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8">
@@ -565,7 +552,7 @@ export default function MsdsDocumentAdminPage() {
             <p className="text-sm leading-6 text-muted-foreground">MSDS를 관리하려면 관리자 정보를 입력해 주세요.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="mt-6 flex flex-col gap-4">
+          <form onSubmit={(event) => { event.preventDefault(); login() }} className="mt-6 flex flex-col gap-4">
             <label className="flex flex-col gap-2" htmlFor="admin-id">
               <span className="text-sm font-semibold">아이디</span>
               <span className="relative block">

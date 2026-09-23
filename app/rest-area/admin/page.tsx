@@ -18,10 +18,8 @@ import {
 import { useRouter } from "next/navigation"
 import { useMemo, useState, type FormEvent } from "react"
 import useSWR from "swr"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { createClient } from "@/utils/supabase/client"
-
-const ADMIN_ID = "human"
-const ADMIN_PASSWORD = "1024"
 
 type RestArea = {
   id: string
@@ -60,9 +58,7 @@ async function fetchRestAreas(): Promise<RestArea[]> {
 
 export default function RestAreaAdminPage() {
   const router = useRouter()
-  const [credentials, setCredentials] = useState({ id: "", password: "" })
-  const [loginError, setLoginError] = useState("")
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { isAuthenticated, isInitialized, credentials, setCredentials, login, loginError } = useAdminAuth()
   const [form, setForm] = useState<RestAreaForm>(EMPTY_FORM)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -83,19 +79,6 @@ export default function RestAreaAdminPage() {
       restArea.name.normalize("NFC").toLowerCase().includes(normalizedTerm),
     )
   }, [restAreas, searchTerm])
-
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    if (credentials.id !== ADMIN_ID || credentials.password !== ADMIN_PASSWORD) {
-      setLoginError("아이디 또는 비밀번호가 올바르지 않습니다.")
-      return
-    }
-
-    setLoginError("")
-    setCredentials({ id: "", password: "" })
-    setIsAuthenticated(true)
-  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -220,6 +203,10 @@ export default function RestAreaAdminPage() {
     }
   }
 
+  if (!isInitialized) {
+    return <main className="flex min-h-dvh items-center justify-center bg-muted" aria-busy="true"><LoaderCircle className="size-6 animate-spin text-primary" aria-hidden="true" /><span className="sr-only">관리자 인증 상태를 확인하는 중입니다.</span></main>
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-muted px-4 py-8">
@@ -232,7 +219,7 @@ export default function RestAreaAdminPage() {
             <p className="text-sm leading-6 text-muted-foreground">휴게소 정보를 관리하려면 관리자 정보를 입력해 주세요.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="mt-6 flex flex-col gap-4">
+          <form onSubmit={(event) => { event.preventDefault(); login() }} className="mt-6 flex flex-col gap-4">
             <label className="flex flex-col gap-2" htmlFor="admin-id">
               <span className="text-sm font-semibold">아이디</span>
               <span className="relative block">

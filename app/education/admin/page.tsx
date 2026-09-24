@@ -679,8 +679,7 @@ export default function EducationAdminPage() {
                       type="date"
                       value={course.completed_date ?? ""}
                       onChange={(event) => updateDraft(course.id, { completed_date: event.target.value })}
-                      disabled={course.status !== "completed"}
-                      className="h-10 rounded-lg border border-input bg-background px-2 text-xs disabled:opacity-50"
+                      className="h-10 rounded-lg border border-input bg-background px-2 text-xs"
                     />
                   </label>
                   <label className="flex flex-col gap-2" htmlFor={`next-date-${course.id}`}>

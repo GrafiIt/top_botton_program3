@@ -289,6 +289,8 @@ export default function EducationAdminPage() {
       setDraftCourses(updates.map(toEditingRecord))
       await mutate()
       window.alert("교육 현황이 저장되었습니다.")
+      setSelectedEmployeeNumber(null)
+      setDraftCourses([])
     } catch (saveError) {
       window.alert(`저장하지 못했습니다. ${getErrorMessage(saveError)}`)
     } finally {

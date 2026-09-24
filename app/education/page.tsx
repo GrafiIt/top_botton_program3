@@ -204,7 +204,7 @@ export default function EducationPage() {
               <article key={course.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3 border-b border-border pb-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold tracking-wide text-muted-foreground">{course.course_code}</p>
+                    <p className="text-[11px] font-semibold tracking-wide text-muted-foreground">{course.course_code.replace("DEFAULT", "기본 교육")}</p>
                     <h4 className="mt-1 text-base font-bold">{course.course_name}</h4>
                   </div>
                   <CourseStatusBadge course={course} />

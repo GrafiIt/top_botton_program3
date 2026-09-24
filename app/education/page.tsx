@@ -63,7 +63,7 @@ function CourseStatusBadge({ course }: { course: EducationRecord }) {
 
   if (status === "기한 초과") {
     return (
-      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-semibold text-yellow-950">
+      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-blue-900 px-2.5 py-1 text-xs font-semibold text-white">
         <TriangleAlert className="size-4" aria-hidden="true" />기한 초과
       </span>
     )
@@ -271,7 +271,7 @@ export default function EducationPage() {
             </div>
             <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
               <table className="min-w-max w-full border-collapse text-left text-sm">
-                <caption className="sr-only">직원별 교육 이수 현황</caption>
+                <caption className="sr-only">직원별 교육 이수 ��황</caption>
                 <thead className="sticky top-0 z-10 bg-secondary text-foreground">
                   <tr>
                     <th scope="col" className="whitespace-nowrap border-b border-border px-4 py-3 font-bold">No</th>
@@ -296,7 +296,7 @@ export default function EducationPage() {
                           const course = employeeCourses?.get(courseName)
                           const cellText = getCourseCellText(course)
                           const status = course ? getCourseStatus(course) : null
-                          return <td key={courseName} className="whitespace-pre-line border-b border-border px-4 py-3 leading-6"><span className={status === "기한 초과" ? "font-semibold text-yellow-950" : status === "미완료" ? "font-semibold text-destructive" : "font-semibold"}>{cellText}</span></td>
+                          return <td key={courseName} className="whitespace-pre-line border-b border-border px-4 py-3 leading-6"><span className={status === "기한 초과" ? "font-semibold text-blue-900" : status === "미완료" ? "font-semibold text-destructive" : "font-semibold"}>{cellText}</span></td>
                         })}
                       </tr>
                     )

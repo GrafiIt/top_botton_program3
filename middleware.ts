@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getCookieDomain } from "@/utils/supabase/cookie-domain"
 
 // ── 통합 인증/구독 시스템 상수 ──────────────────────────────
-const PROGRAM_ID = "human-gw"
+const PROGRAM_ID = "HumanGroupware"
 const LOGIN_URL = "https://payment.1004.help/auth/login"
 const VERIFY_API_BASE = "https://payment.1004.help/api/v1/verify-permission"
 // ────────────────────────────────────────────────────────────

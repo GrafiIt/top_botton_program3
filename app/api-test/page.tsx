@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 
-const PROGRAM_ID = "human-gw"
+const PROGRAM_ID = "HumanGroupware"
 const VERIFY_API_BASE = "https://payment.1004.help/api/v1/verify-permission"
 
 export default async function ServerApiTestPage() {

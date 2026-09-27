@@ -16,6 +16,7 @@ type EducationRecord = {
   employee_name: string
   department: string
   position: string
+  verified_user: string | null
   course_code: string
   course_name: string
   course_order: number
@@ -29,12 +30,42 @@ async function fetchEducationRecords(): Promise<EducationRecord[]> {
   const { data, error } = await supabase
     .schema("drivermgm")
     .from("human_gw_education")
-    .select("id, employee_number, employee_name, department, position, course_code, course_name, course_order, completed_date, next_education_date, status")
+    .select("id, employee_number, employee_name, department, position, verified_user, course_code, course_name, course_order, completed_date, next_education_date, status")
     .order("employee_number", { ascending: true })
     .order("course_order", { ascending: true })
 
   if (error) throw error
   return (data ?? []) as EducationRecord[]
+}
+
+type CurrentUser = {
+  name: string
+  email: string
+  role: string
+  user_level: number | string
+}
+
+async function fetchCurrentUser(): Promise<CurrentUser> {
+  const response = await fetch("https://payment.1004.help/api/v1/users/me", {
+    credentials: "include",
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    throw new Error("현재 사용자 정보를 불러오지 못했습니다.")
+  }
+
+  const payload = (await response.json()) as { user?: CurrentUser }
+  if (!payload.user?.name) {
+    throw new Error("현재 사용자 정보를 확인할 수 없습니다.")
+  }
+
+  return payload.user
+}
+
+function isAdminUser(user: CurrentUser | undefined) {
+  const level = Number(user?.user_level)
+  return level === 1 || level === 2
 }
 
 function formatDate(value: string | null) {
@@ -106,37 +137,47 @@ export default function EducationPage() {
   const [selectedEmployeeNumber, setSelectedEmployeeNumber] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>("tile")
   const { data: records = [], error, isLoading } = useSWR("education-records", fetchEducationRecords)
+  const { data: currentUser, error: userError, isLoading: isUserLoading } = useSWR("current-user", fetchCurrentUser)
+  const isPageLoading = isLoading || isUserLoading
+  const isAdmin = isAdminUser(currentUser)
+
+  const visibleRecords = useMemo(() => {
+    if (!currentUser) return []
+    if (isAdmin) return records
+    const currentUserName = currentUser.name.trim()
+    return records.filter((record) => record.verified_user?.trim() === currentUserName)
+  }, [currentUser, isAdmin, records])
 
   const employees = useMemo(() => {
     const employeeMap = new Map<string, EducationRecord>()
-    records.forEach((record) => {
+    visibleRecords.forEach((record) => {
       if (!employeeMap.has(record.employee_number)) employeeMap.set(record.employee_number, record)
     })
     return [...employeeMap.values()]
-  }, [records])
+  }, [visibleRecords])
 
   const courseNames = useMemo(() => {
     const courses = new Map<string, number>()
-    records.forEach((record) => {
+    visibleRecords.forEach((record) => {
       const currentOrder = courses.get(record.course_name)
       if (currentOrder === undefined || record.course_order < currentOrder) courses.set(record.course_name, record.course_order)
     })
     return [...courses.entries()].sort(([, leftOrder], [, rightOrder]) => leftOrder - rightOrder).map(([courseName]) => courseName)
-  }, [records])
+  }, [visibleRecords])
 
   const coursesByEmployee = useMemo(() => {
     const courseMap = new Map<string, Map<string, EducationRecord>>()
-    records.forEach((record) => {
+    visibleRecords.forEach((record) => {
       const employeeCourses = courseMap.get(record.employee_number) ?? new Map<string, EducationRecord>()
       employeeCourses.set(record.course_name, record)
       courseMap.set(record.employee_number, employeeCourses)
     })
     return courseMap
-  }, [records])
+  }, [visibleRecords])
 
   const selectedEmployee = employees.find((employee) => employee.employee_number === selectedEmployeeNumber) ?? null
   const selectedCourses = selectedEmployee
-    ? records.filter((record) => record.employee_number === selectedEmployee.employee_number)
+    ? visibleRecords.filter((record) => record.employee_number === selectedEmployee.employee_number)
     : []
 
   const downloadCsv = () => {
@@ -246,14 +287,14 @@ export default function EducationPage() {
           <button type="button" role="tab" aria-selected={viewMode === "excel"} onClick={() => setViewMode("excel")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === "excel" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>엑셀</button>
         </div>
 
-        {isLoading ? <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground" role="status"><LoaderCircle className="mx-auto mb-3 size-5 animate-spin" aria-hidden="true" />교육 현황을 불러오는 중입니다.</p> : null}
-        {error ? <p className="rounded-2xl border border-destructive/30 bg-card p-8 text-center text-sm text-destructive" role="alert">교육 현황을 불러오지 못했습니다. 테이블 설정을 확인해 주세요.</p> : null}
-        {!isLoading && !error && employees.length === 0 ? <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm leading-6 text-muted-foreground">등록된 직원 교육 현황이 없습니다.</p> : null}
+        {isPageLoading ? <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground" role="status"><LoaderCircle className="mx-auto mb-3 size-5 animate-spin" aria-hidden="true" />교육 현황을 불러오는 중입니다.</p> : null}
+        {error || userError ? <p className="rounded-2xl border border-destructive/30 bg-card p-8 text-center text-sm text-destructive" role="alert">{userError ? "사용자 권한 정보를 불러오지 못했습니다." : "교육 현황을 불러오지 못했습니다. 테이블 설정을 확인해 주세요."}</p> : null}
+        {!isPageLoading && !error && !userError && employees.length === 0 ? <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm leading-6 text-muted-foreground">{isAdmin ? "등록된 직원 교육 현황이 없습니다." : "매칭된 교육 현황이 없습니다"}</p> : null}
 
-        {!isLoading && !error && employees.length > 0 && viewMode === "tile" ? (
+        {!isPageLoading && !error && !userError && employees.length > 0 && viewMode === "tile" ? (
           <div className="flex flex-col gap-3">
             {employees.map((employee) => {
-              const courseCount = records.filter((record) => record.employee_number === employee.employee_number).length
+              const courseCount = visibleRecords.filter((record) => record.employee_number === employee.employee_number).length
               return <button key={employee.employee_number} type="button" onClick={() => setSelectedEmployeeNumber(employee.employee_number)} className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left shadow-sm transition-transform hover:-translate-y-0.5 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0">
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary"><UserRound className="size-6" aria-hidden="true" /></span>
                 <span className="min-w-0 flex-1"><span className="block truncate text-base font-bold">{employee.employee_name}</span><span className="mt-1 block text-sm text-muted-foreground">{employee.employee_number} · {employee.department}</span><span className="mt-1 block text-xs text-muted-foreground">{employee.position} · 교육 {courseCount}과정</span></span>
@@ -263,7 +304,7 @@ export default function EducationPage() {
           </div>
         ) : null}
 
-        {!isLoading && !error && employees.length > 0 && viewMode === "excel" ? (
+        {!isPageLoading && !error && !userError && employees.length > 0 && viewMode === "excel" ? (
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button type="button" onClick={() => setViewMode("tile")} className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><ArrowLeft className="size-4" aria-hidden="true" />이전으로 돌아가기</button>

@@ -124,7 +124,7 @@ export default function HomePage() {
                   <List className="w-5 h-5" />리스트 보기
                 </Button>
               </Link>
-              <Link href="/notices-admin/login" className="w-full sm:w-auto">
+              <Link href="/notices-admin/new" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full gap-2 sm:w-auto">
                   <PlusCircle className="w-5 h-5" />새 공지 작성
                 </Button>

@@ -150,7 +150,7 @@ export default function NewNoticePage() {
 
   if (!isInitialized) return <main className="flex min-h-dvh items-center justify-center bg-background" aria-busy="true"><span className="sr-only">관리자 인증 상태를 확인하는 중입니다.</span></main>
   if (!isAuthenticated) {
-    router.replace("/notices-admin/login")
+    router.replace("/notices-admin/login?next=/notices-admin/new")
     return null
   }
 

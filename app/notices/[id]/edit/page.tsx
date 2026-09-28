@@ -204,7 +204,7 @@ export default function EditNoticePage() {
   }
 
   if (!isAuthenticated) {
-    router.replace("/notices-admin/login")
+    router.replace(`/notices-admin/login?next=${encodeURIComponent(`/notices/${params.id}/edit`)}`)
     return null
   }
 
@@ -344,7 +344,7 @@ export default function EditNoticePage() {
 
               <div className="flex justify-center">
                 <Button type="button" size="sm" variant="ghost" onClick={() => { handleLogout(); router.push("/notices") }} className="text-xs">
-                  로그아웃
+                  ���그아웃
                 </Button>
               </div>
             </form>

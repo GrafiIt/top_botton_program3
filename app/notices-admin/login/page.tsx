@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,12 +10,23 @@ import { Lock, User } from "lucide-react"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<main className="flex min-h-dvh items-center justify-center bg-background" aria-busy="true"><span className="sr-only">관리자 인증 상태를 확인하는 중입니다.</span></main>}>
+      <AdminLoginForm />
+    </Suspense>
+  )
+}
+
+function AdminLoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const nextPath = searchParams.get("next")
+  const destination = nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/notices-admin/new"
   const { isAuthenticated, isInitialized, credentials, setCredentials, login, loginError } = useAdminAuth()
 
   useEffect(() => {
-    if (isInitialized && isAuthenticated) router.replace("/notices-admin/new")
-  }, [isAuthenticated, isInitialized, router])
+    if (isInitialized && isAuthenticated) router.replace(destination)
+  }, [destination, isAuthenticated, isInitialized, router])
 
   if (!isInitialized) {
     return <main className="flex min-h-dvh items-center justify-center bg-background" aria-busy="true"><span className="sr-only">관리자 인증 상태를 확인하는 중입니다.</span></main>
@@ -29,7 +40,7 @@ export default function AdminLoginPage() {
           <CardDescription>공지사항을 작성하려면 관리자 로그인이 필요합니다.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(event) => { event.preventDefault(); if (login()) router.push("/notices-admin/new") }} className="flex flex-col gap-4">
+          <form onSubmit={(event) => { event.preventDefault(); if (login()) router.push(destination) }} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="username">아이디</Label>
               <div className="relative"><User className="absolute left-3 top-3 size-4 text-muted-foreground" aria-hidden="true" /><Input id="username" type="text" placeholder="관리자 아이디" autoComplete="username" value={credentials.id} onChange={(event) => setCredentials((current) => ({ ...current, id: event.target.value }))} className="pl-10" required /></div>

@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpenCheck, CalendarDays, CheckCircle2, ChevronRight, Cir
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
+import { getCurrentUser, type CurrentUser } from "@/app/education/actions"
 import { createClient } from "@/utils/supabase/client"
 
 type EducationStatus = "completed" | "incomplete" | "exempt"
@@ -36,31 +37,6 @@ async function fetchEducationRecords(): Promise<EducationRecord[]> {
 
   if (error) throw error
   return (data ?? []) as EducationRecord[]
-}
-
-type CurrentUser = {
-  name: string
-  email: string
-  role: string
-  user_level: number | string
-}
-
-async function fetchCurrentUser(): Promise<CurrentUser> {
-  const response = await fetch("https://payment.1004.help/api/v1/users/me", {
-    credentials: "include",
-    cache: "no-store",
-  })
-
-  if (!response.ok) {
-    throw new Error("현재 사용자 정보를 불러오지 못했습니다.")
-  }
-
-  const payload = (await response.json()) as { user?: CurrentUser }
-  if (!payload.user?.name) {
-    throw new Error("현재 사용자 정보를 확인할 수 없습니다.")
-  }
-
-  return payload.user
 }
 
 function isAdminUser(user: CurrentUser | undefined) {
@@ -137,7 +113,7 @@ export default function EducationPage() {
   const [selectedEmployeeNumber, setSelectedEmployeeNumber] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>("tile")
   const { data: records = [], error, isLoading } = useSWR("education-records", fetchEducationRecords)
-  const { data: currentUser, error: userError, isLoading: isUserLoading } = useSWR("current-user", fetchCurrentUser)
+  const { data: currentUser, error: userError, isLoading: isUserLoading } = useSWR("current-user", getCurrentUser)
   const isPageLoading = isLoading || isUserLoading
   const isAdmin = isAdminUser(currentUser)
 

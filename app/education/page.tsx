@@ -112,8 +112,14 @@ export default function EducationPage() {
   const router = useRouter()
   const [selectedEmployeeNumber, setSelectedEmployeeNumber] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>("tile")
-  const { data: records = [], error, isLoading } = useSWR("education-records", fetchEducationRecords)
-  const { data: currentUser, error: userError, isLoading: isUserLoading } = useSWR("current-user", getCurrentUser)
+  const { data: records = [], error, isLoading } = useSWR("education-records", fetchEducationRecords, {
+    shouldRetryOnError: false,
+    revalidateOnFocus: false,
+  })
+  const { data: currentUser, error: userError, isLoading: isUserLoading } = useSWR("current-user", getCurrentUser, {
+    shouldRetryOnError: false,
+    revalidateOnFocus: false,
+  })
   const isPageLoading = isLoading || isUserLoading
   const isAdmin = isAdminUser(currentUser)
 

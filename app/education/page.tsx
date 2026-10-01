@@ -108,12 +108,6 @@ function escapeCsvValue(value: string | number) {
   return `"${String(value).replaceAll('"', '""')}"`
 }
 
-const nameMap: Record<string, string> = {
-  bellingham: "밸링엄",
-  messi: "메시",
-  mbappe: "음바페",
-}
-
 export default function EducationPage() {
   const router = useRouter()
   const [selectedEmployeeNumber, setSelectedEmployeeNumber] = useState<string | null>(null)
@@ -132,19 +126,8 @@ export default function EducationPage() {
   const visibleRecords = useMemo(() => {
     if (!currentUser) return []
     if (isAdmin) return records
-    const rawName = currentUser.name.trim()
-    const lowerName = rawName.toLowerCase()
-    const mappedKoreanName = nameMap[lowerName] || rawName
-
-    return records.filter((record) => {
-      const verified = record.verified_user?.trim()
-      if (!verified) return false
-      return (
-        verified === mappedKoreanName ||
-        verified.toLowerCase() === lowerName ||
-        verified === rawName
-      )
-    })
+    const currentUserName = currentUser.name.trim()
+    return records.filter((record) => record.verified_user?.trim() === currentUserName)
   }, [currentUser, isAdmin, records])
 
   const employees = useMemo(() => {

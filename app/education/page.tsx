@@ -290,7 +290,7 @@ export default function EducationPage() {
 
         <div className="flex rounded-xl bg-secondary p-1" role="tablist" aria-label="교육 현황 보기 방식">
           <button type="button" role="tab" aria-selected={viewMode === "tile"} onClick={() => setViewMode("tile")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === "tile" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>타일</button>
-          <button type="button" role="tab" aria-selected={viewMode === "excel"} onClick={() => setViewMode("excel")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === "excel" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>���셀</button>
+          <button type="button" role="tab" aria-selected={viewMode === "excel"} onClick={() => setViewMode("excel")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === "excel" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>엑셀</button>
         </div>
 
         {isPageLoading ? <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground" role="status"><LoaderCircle className="mx-auto mb-3 size-5 animate-spin" aria-hidden="true" />교육 현황을 불러오는 중입니다.</p> : null}

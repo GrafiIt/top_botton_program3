@@ -108,6 +108,12 @@ function escapeCsvValue(value: string | number) {
   return `"${String(value).replaceAll('"', '""')}"`
 }
 
+const nameMap: Record<string, string> = {
+  bellingham: "밸링엄",
+  messi: "메시",
+  mbappe: "음바페",
+}
+
 export default function EducationPage() {
   const router = useRouter()
   const [selectedEmployeeNumber, setSelectedEmployeeNumber] = useState<string | null>(null)
@@ -126,8 +132,19 @@ export default function EducationPage() {
   const visibleRecords = useMemo(() => {
     if (!currentUser) return []
     if (isAdmin) return records
-    const currentUserName = currentUser.name.trim()
-    return records.filter((record) => record.verified_user?.trim() === currentUserName)
+    const rawName = currentUser.name.trim()
+    const lowerName = rawName.toLowerCase()
+    const mappedKoreanName = nameMap[lowerName] || rawName
+
+    return records.filter((record) => {
+      const verified = record.verified_user?.trim()
+      if (!verified) return false
+      return (
+        verified === mappedKoreanName ||
+        verified.toLowerCase() === lowerName ||
+        verified === rawName
+      )
+    })
   }, [currentUser, isAdmin, records])
 
   const employees = useMemo(() => {
@@ -251,9 +268,16 @@ export default function EducationPage() {
           <ArrowLeft className="size-5" aria-hidden="true" />
         </button>
         <h1 className="text-base font-bold">교육 현황 관리</h1>
-        <button type="button" onClick={() => router.push("/education/admin")} className="flex size-10 items-center justify-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="교육 현황 관리자 페이지로 이동">
-          <Settings className="size-5" aria-hidden="true" />
-        </button>
+        <div className="flex items-center">
+          {currentUser?.name ? (
+            <div className="mr-2 text-[11px] font-medium text-muted-foreground">
+              {currentUser.name} (Level: {currentUser.user_level})
+            </div>
+          ) : null}
+          <button type="button" onClick={() => router.push("/education/admin")} className="flex size-10 items-center justify-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="교육 현황 관리자 페이지로 이동">
+            <Settings className="size-5" aria-hidden="true" />
+          </button>
+        </div>
       </header>
 
       <section className="flex flex-col gap-5 px-4 py-6" aria-labelledby="education-list-title">
@@ -266,7 +290,7 @@ export default function EducationPage() {
 
         <div className="flex rounded-xl bg-secondary p-1" role="tablist" aria-label="교육 현황 보기 방식">
           <button type="button" role="tab" aria-selected={viewMode === "tile"} onClick={() => setViewMode("tile")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === "tile" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>타일</button>
-          <button type="button" role="tab" aria-selected={viewMode === "excel"} onClick={() => setViewMode("excel")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === "excel" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>엑셀</button>
+          <button type="button" role="tab" aria-selected={viewMode === "excel"} onClick={() => setViewMode("excel")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === "excel" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>���셀</button>
         </div>
 
         {isPageLoading ? <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground" role="status"><LoaderCircle className="mx-auto mb-3 size-5 animate-spin" aria-hidden="true" />교육 현황을 불러오는 중입니다.</p> : null}

@@ -162,9 +162,16 @@ export async function middleware(request: NextRequest) {
   // 기존 request headers를 복사한 뒤 커스텀 헤더를 추가한다.
   // 한글 회사명은 HTTP 헤더에 그대로 넣을 수 없으므로 encodeURIComponent 로 인코딩한다.
   const requestHeaders = new Headers(request.headers)
+  const rawUserName =
+    user.user_metadata?.name ||
+    user.user_metadata?.full_name ||
+    user.email?.split("@")[0] ||
+    "알 수 없음"
   requestHeaders.set("X-User-Level", userLevel)
   requestHeaders.set("X-Company-Name", encodeURIComponent(companyName))
   requestHeaders.set("X-Company-Code", companyCode)
+  requestHeaders.set("X-User-Name", encodeURIComponent(rawUserName))
+  requestHeaders.set("X-User-Email", user.email || "")
 
   // supabaseResponse 가 갱신한 쿠키를 보존하면서 새 헤더를 주입한 응답을 생성
   const finalResponse = NextResponse.next({

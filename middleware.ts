@@ -20,9 +20,9 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // ── /debug 및 /api-test 경로 무조건 통과 ──────────────────────
+  // ── /debug, /api-test 및 /test-user 경로 무조건 통과 ────────────────
   // (서버 사이드 원본 응답 확인용 진단 페이지이므로 검증에서 제외)
-  if (pathname === "/debug" || pathname === "/api-test") {
+  if (pathname === "/debug" || pathname === "/api-test" || pathname === "/test-user") {
     return NextResponse.next()
   }
   // ─────────────────────────────────────────────────────────

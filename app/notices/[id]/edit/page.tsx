@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X, ArrowLeft, Save } from "lucide-react"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
+import { preserveBlankLines } from "@/lib/preserve-blank-lines"
 
 interface Notice {
   id: string
@@ -47,9 +48,8 @@ function normalizeContent(raw: string): string {
   if (!raw) return ""
   // 이미 HTML 태그가 포함된 최신 데이터라면 그대로 사용
   const hasHtmlTag = /<\/?[a-z][\s\S]*>/i.test(raw)
-  if (hasHtmlTag) return raw
-  // 과거 일반 텍스트 데이터: 줄바꿈을 <br>로 변환
-  return raw.replace(/\r\n/g, "\n").replace(/\n/g, "<br>")
+  const html = hasHtmlTag ? raw : raw.replace(/\r\n/g, "\n").replace(/\n/g, "<br>")
+  return preserveBlankLines(html)
 }
 
 export default function EditNoticePage() {

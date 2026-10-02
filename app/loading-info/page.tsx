@@ -13,8 +13,6 @@ interface Notice {
   title: string
   content: string
   created_at: string
-  images?: string[]
-  attachments?: any[]
 }
 
 const ITEMS_PER_PAGE = 10
@@ -53,7 +51,7 @@ export default function HomePage() {
       const { data, error } = await supabase
         .schema("all_use_programs")
         .from("top_botton_program")
-        .select("*")
+        .select("id, title, content, created_at")
         .order("title", { ascending: true })
       if (!error && Array.isArray(data)) {
         const sorted = [...data].sort((a, b) =>
@@ -202,7 +200,7 @@ export default function HomePage() {
                     <Link href={`/notices/${notice.id}`}>
                       <Button variant="ghost" className="mt-4 gap-2">
                         <Eye className="w-4 h-4" />
-                        자세히 보기
+                        ��세히 보기
                       </Button>
                     </Link>
                   </CardContent>

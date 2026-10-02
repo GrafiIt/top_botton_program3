@@ -126,7 +126,7 @@ export default function HomePage() {
               </Link>
               <Link href="/notices-admin/new" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full gap-2 sm:w-auto">
-                  <PlusCircle className="w-5 h-5" />새 공지 작성
+                  <PlusCircle className="w-5 h-5" />로그인 & 작성
                 </Button>
               </Link>
             </div>

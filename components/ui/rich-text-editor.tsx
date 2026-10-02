@@ -8,6 +8,7 @@ import { Color } from "@tiptap/extension-color"
 import { Heading } from "@tiptap/extension-heading"
 import { useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { preserveBlankLines } from "@/lib/preserve-blank-lines"
 import {
   Bold,
   Italic,
@@ -61,22 +62,26 @@ export function RichTextEditor({
       TextStyle,
       Color,
     ],
-    content: value,
+    content: preserveBlankLines(value),
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      onChange(preserveBlankLines(editor.getHTML()))
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none px-4 py-3",
+        class: "rich-text-content prose prose-sm max-w-none whitespace-pre-wrap focus:outline-none px-4 py-3",
         style: `min-height: ${minHeight}`,
       },
     },
   })
 
   // 외부에서 value가 변경될 때 (예: 수정 페이지에서 DB 데이터 로드 시) 에디터 내용 동기화
+  // 빈 문단의 <br> 보정만 다른 경우에는 setContent하지 않아 커서가 튀지 않게 한다.
   useEffect(() => {
-    if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value, false)
+    if (!editor) return
+    const next = preserveBlankLines(value)
+    const current = preserveBlankLines(editor.getHTML())
+    if (next !== current) {
+      editor.commands.setContent(next, { emitUpdate: false })
     }
   }, [value, editor])
 
@@ -203,7 +208,7 @@ export function RichTextEditor({
       {/* 에디터 본문 */}
       <EditorContent
         editor={editor}
-        className="[&_.ProseMirror]:min-h-[300px] [&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h1]:mb-2 [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-bold [&_.ProseMirror_h2]:mb-2 [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-bold [&_.ProseMirror_h3]:mb-2 [&_.ProseMirror_p]:mb-2 [&_.ProseMirror_p.is-empty::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-empty::before]:text-muted-foreground [&_.ProseMirror_p.is-empty::before]:pointer-events-none [&_.ProseMirror_p.is-empty::before]:float-left"
+        className="rich-text-content whitespace-pre-wrap [&_.ProseMirror]:min-h-[300px] [&_.ProseMirror]:whitespace-pre-wrap [&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h1]:mb-2 [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-bold [&_.ProseMirror_h2]:mb-2 [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-bold [&_.ProseMirror_h3]:mb-2 [&_.ProseMirror_p]:mb-2 [&_.ProseMirror_p:empty]:min-h-[1.6em] [&_.ProseMirror_p:empty]:before:inline-block [&_.ProseMirror_p:empty]:before:content-['\00a0'] [&_.ProseMirror_p.is-empty::before]:text-muted-foreground [&_.ProseMirror_p.is-empty::before]:pointer-events-none"
       />
     </div>
   )

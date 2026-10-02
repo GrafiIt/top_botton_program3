@@ -142,3 +142,20 @@
     pointer-events: none !important;
   }
 }
+
+/* 빈 문단은 높이가 0이고 인접 마진이 한 줄로 겹친다. 입력한 엔터 수를 그대로 보여 준다. */
+.rich-text-content {
+  white-space: pre-wrap;
+}
+
+.rich-text-content p:empty::before {
+  content: "\00a0";
+  display: inline-block;
+}
+
+.rich-text-content p:empty,
+.rich-text-content p:has(> br:only-child) {
+  min-height: 1.6em;
+  margin-block: 0;
+  line-height: 1.6;
+}

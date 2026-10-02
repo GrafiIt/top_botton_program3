@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, ArrowLeft, Download } from "lucide-react"
 import { NoticeAdminPanel } from "@/components/notice-admin-panel"
 import { createClient } from "@/lib/supabase/client"
+import { preserveBlankLines } from "@/lib/preserve-blank-lines"
 
 interface Notice {
   id: string
@@ -25,8 +26,8 @@ interface Notice {
 function renderContent(raw: string): string {
   if (!raw) return ""
   const hasHtmlTag = /<\/?[a-z][\s\S]*>/i.test(raw)
-  if (hasHtmlTag) return raw
-  return raw.replace(/\r\n/g, "\n").replace(/\n/g, "<br>")
+  const html = hasHtmlTag ? raw : raw.replace(/\r\n/g, "\n").replace(/\n/g, "<br>")
+  return preserveBlankLines(html)
 }
 
 function getEmbedUrl(url: string): string | null {
@@ -149,7 +150,7 @@ export default function NoticeDetailPage() {
             )}
 
             <div
-              className="prose max-w-none text-lg leading-relaxed"
+              className="rich-text-content prose max-w-none whitespace-pre-wrap text-lg leading-relaxed [&_p:empty]:min-h-[1.6em] [&_p:empty]:before:inline-block [&_p:empty]:before:content-['\00a0']"
               dangerouslySetInnerHTML={{ __html: renderContent(notice.content) }}
             />
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -38,7 +38,6 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
-  const { isAdmin, handleLogout } = useAdminAuth()
 
   useEffect(() => {
     fetchNotices()
@@ -50,7 +49,6 @@ export default function HomePage() {
 
   const fetchNotices = async () => {
     try {
-      const { createClient } = await import("@/lib/supabase/client")
       const supabase = createClient()
       const { data, error } = await supabase
         .schema("all_use_programs")
@@ -130,11 +128,6 @@ export default function HomePage() {
                 </Button>
               </Link>
             </div>
-            {isAdmin && (
-              <Button size="sm" variant="ghost" onClick={handleLogout} className="text-xs">
-                로그아웃
-              </Button>
-            )}
           </div>
         </div>
 
